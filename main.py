@@ -1,16 +1,16 @@
 import sys
-from Adafruit_IO import MQTTClient
-import random
 import time
 import serial.tools.list_ports
+from Adafruit_IO import MQTTClient
 
-AIO_FEED_ID = "led"
+AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
 AIO_KEY = "aio_RfGU73f5BHFvSvJIfnRNRujgbzBm"
 
 def connect(client):
     print("Successfully connected to Adafruit IO")
-    client.subscribe(AIO_FEED_ID)
+    for feed in AIO_FEED_ID:
+        client.subscribe(feed)
 
 def subcribe(client, userdata, mid, granted_qos):
     print("Successfully subscribed to Adafruit IO")
@@ -55,6 +55,10 @@ def processData(data):
     print(splitData)
     if splitData[1] == "TEMP":
         client.publish("temp", splitData[2])
+    if splitData[1] == "HUMID":
+        client.publish("humidity", splitData[2])
+    if splitData[1] == "LUX":
+        client.publish("bright", splitData[2])
 
 mess = ""
 def readSerial():
