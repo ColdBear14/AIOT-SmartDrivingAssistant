@@ -5,7 +5,7 @@ from Adafruit_IO import MQTTClient
 
 AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
-AIO_KEY = "aio_RfGU73f5BHFvSvJIfnRNRujgbzBm"
+AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
 
 def connect(client):
     print("Successfully connected to Adafruit IO")
@@ -53,12 +53,12 @@ def processData(data):
     data = data.replace("#", "")
     splitData = data.split(":")
     print(splitData)
-    if splitData[1] == "TEMP":
-        client.publish("temp", splitData[2])
-    if splitData[1] == "HUMID":
-        client.publish("humidity", splitData[2])
-    if splitData[1] == "LUX":
-        client.publish("bright", splitData[2])
+    if splitData[0] == "TEMP":
+        client.publish("temp", splitData[1])
+    elif  splitData[0] == "HUMID":
+        client.publish("humidity", splitData[1])
+    elif  splitData[0] == "LUX":
+        client.publish("bright", splitData[1])
 
 mess = ""
 def readSerial():
