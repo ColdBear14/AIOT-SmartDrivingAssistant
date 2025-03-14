@@ -1,5 +1,8 @@
 from passlib.context import CryptContext
 from fastapi import HTTPException
+from pydantic import BaseModel
+
+
 
 class User:
     __pwd_context = CryptContext(schemes=['bcrypt'],deprecated='auto')
@@ -34,6 +37,8 @@ class User:
             raise HTTPException(status_code=400, detail="Invalid credentials")
         return {'message': 'Login successful'}
     
+class UserRequest(BaseModel):
+    username: str
+    password: str
     
-        
     
