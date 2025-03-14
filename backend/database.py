@@ -11,7 +11,8 @@ class Database():
     self.client = MongoClient(config.mongo_url)
     self.db = self.client[db_name]
     self.collections = set(self.db.list_collection_names())
-  def ensure_collection(func):
+    
+  def ensure_time_series_collection(func):
     def wrapper(self, collection_name, document):
       if collection_name not in self.db.list_collection_names():
           self.db.create_collection(
@@ -21,7 +22,8 @@ class Database():
           print(f"Collection '{collection_name}' created successfully.")
       return func(self, collection_name, document)
     return wrapper  
-  @ensure_collection
+  
+  @ensure_time_series_collection
   def push_to_db(self,collection_name,document):
     document['timestamp'] = datetime.now()
     self.db[collection_name].insert_one(document)
