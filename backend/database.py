@@ -2,7 +2,7 @@ from pymongo import MongoClient
 import requests
 import json
 from datetime import datetime
-from utils import Config
+from config import Config
 # AdaFruit Credential
 config = Config()
 #MongoDB setup
@@ -19,7 +19,6 @@ class Database():
             collection_name,
             timeseries={"timeField": "timestamp", "granularity": "seconds"}
         )
-        self.db[collection_name].create_index("timestamp", expireAfterSeconds=86400)  # Auto-delete after 1 day
         self.collections.add(collection_name)  # Update internal cache
         print(f"Collection '{collection_name}' created successfully.")
   
