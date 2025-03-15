@@ -59,6 +59,8 @@ def processData(data):
         client.publish("humidity", splitData[1])
     elif  splitData[0] == "LUX":
         client.publish("bright", splitData[1])
+    elif  splitData[0] == "DIS":
+        client.publish("distance", splitData[1])
 
 mess = ""
 def readSerial():
