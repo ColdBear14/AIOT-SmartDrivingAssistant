@@ -2,11 +2,11 @@ import sys
 import time
 import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
-
+from backend.database import Database
 AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
 AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
-
+running = False
 def connect(client):
     print("Successfully connected to Adafruit IO")
     for feed in AIO_FEED_ID:
@@ -47,6 +47,7 @@ client.on_subscribe = subcribe
 client.connect()
 client.loop_background()
 
+db = Database()
 mess = ""
 def processData(data):
     data = data.replace("!", "")
@@ -61,6 +62,12 @@ def processData(data):
         client.publish("bright", splitData[1])
     elif  splitData[0] == "DIS":
         client.publish("distance", splitData[1])
+    doc = {
+        'sensor_type': splitData[0].lower(),
+        'value': float(splitData[1])
+    }
+    db.push_to_db('environment_sensor',doc)
+    
 
 mess = ""
 def readSerial():
@@ -76,7 +83,12 @@ def readSerial():
                 mess = ""
             else:
                 mess = mess[end+1:]
+def start_system():
+    global running
+    running = True
+    while running:
+        readSerial()
+        time.sleep(5)
 
-while True:
-    readSerial()
-    time.sleep(5)
+if __name__ == '__main__':
+    start_system()
