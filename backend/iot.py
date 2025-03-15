@@ -40,8 +40,16 @@ class IOTSystem:
         print("Successfully subscribed to Adafruit IO")
 
     def disconnect(self, client):
-        print("Successfully disconnected from Adafruit IO")
-        sys.exit(1)
+        print("Disconnected from Adafruit IO. Attempting to reconnect...")
+        while True:  # Keep trying to reconnect
+            try:
+                self.client.connect()
+                self.client.loop_background()
+                print("Reconnected to Adafruit IO!")
+                break  # Exit loop if successful
+            except Exception as e:
+                print(f"Reconnect failed: {e}. Retrying in 5 seconds...")
+                time.sleep(5)
 
     def message(self, client, feed_id, payload):
         print("Received data from Adafruit IO:", payload)
