@@ -1,7 +1,8 @@
 from passlib.context import CryptContext
 from fastapi import HTTPException
-from pydantic import BaseModel
-
+from pydantic import BaseModel, Field
+from typing import Literal
+import secrets
 
 
 class User:
@@ -9,7 +10,7 @@ class User:
     
     FIELD_USERNAME = 'username'
     FIELD_PASSWORD = 'password'
-    
+    FIELD_SESSION = 'session_id'
     def __init__(self,username:str,password:str):
         self.username = username
         self.password = password
@@ -35,10 +36,18 @@ class User:
         user = user_collection.find_one({User.FIELD_USERNAME: self.username})
         if not (user and self._verify_pw(user[User.FIELD_PASSWORD])):
             raise HTTPException(status_code=400, detail="Invalid credentials")
-        return {'message': 'Login successful'}
+        
+        session_id = secrets.token_hex(32)
+        user_collection.update_one(
+            {User.FIELD_USERNAME: self.username},
+            {'$set': {User.FIELD_SESSION: session_id}}
+        )
+        return session_id
     
 class UserRequest(BaseModel):
     username: str
     password: str
     
-    
+class SensorRequest(BaseModel):
+    sensor_type: Literal["temp","humid","lux","dist"]
+    amt: int = Field(...,ge=1)

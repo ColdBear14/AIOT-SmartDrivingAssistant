@@ -3,12 +3,13 @@ import requests
 import json
 from datetime import datetime
 from config import Config
+from utils import client
 # AdaFruit Credential
 config = Config()
 #MongoDB setup
 class Database():
   def __init__(self,db_name = config.db_name):
-    self.client = MongoClient(config.mongo_url)
+    self.client = client
     self.db = self.client[db_name]
     self.collections = set(self.db.list_collection_names())
     
