@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 AIO_USER_NAME = "NopeHy14"
-AIO_KEY = "aio_RfGU73f5BHFvSvJIfnRNRujgbzBm"
+AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
 @dataclass
 class Config:
     mongo_url: str = "mongodb://localhost:27017"

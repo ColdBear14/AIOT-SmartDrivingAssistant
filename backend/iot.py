@@ -6,12 +6,13 @@ from database import Database
 from config import config
 import threading
 
-class IOTSystem:
+class IOTSystem(threading.Thread):
     AIO_FEED_ID = ['led', 'pump']
     AIO_USERNAME = config.aio_user
     AIO_KEY = config.aio_key
 
     def __init__(self):
+        super().__init__(daemon=True)
         self.db = Database()
         self.mess = ""
         self.running = False
@@ -30,7 +31,8 @@ class IOTSystem:
         self.client.on_subscribe = self.subscribe
         self.client.connect()
         self.client.loop_background()
-
+    def client_connect(self):
+        self.client.loop_forever()
     def connect(self, client):
         print("Successfully connected to Adafruit IO")
         for feed in IOTSystem.AIO_FEED_ID:
@@ -104,18 +106,17 @@ class IOTSystem:
     def _run_system(self):
         while self.running:
             self.readSerial()
-            time.sleep(5)
+            time.sleep(1)
             
-    def start_system(self):
+    def run(self):
         if not self.running:
             self.running = True
-            self.thread = threading.Thread(target=self._run_system)
-            self.thread.start()
+            self._run_system()
             print("System started in background")
         else: 
             print("System is already online")
         
-    def stop_system(self):
+    def stop(self):
         if self.running:
             self.running = False
             print("System stopped.")
@@ -124,8 +125,7 @@ class IOTSystem:
     
 if __name__ == "__main__":
     iotsystem = IOTSystem()
-    count = 1
+    iotsystem.start()
     while True:
-        if count == 1:
-            iotsystem.start_system()
-        count = 0
+        time.sleep(1)
+        print("Main thread is running...")

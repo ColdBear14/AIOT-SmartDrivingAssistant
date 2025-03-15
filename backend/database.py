@@ -26,7 +26,7 @@ class Database():
     self.ensure_time_series_collection(collection_name)
     document['timestamp'] = datetime.now()
     self.db[collection_name].insert_one(document)
-    print(f'Store in MongoDB: {document}')
+    # print(f'Store in MongoDB: {document}')
 
 
 if __name__ == '__main__':

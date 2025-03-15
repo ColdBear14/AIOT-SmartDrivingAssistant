@@ -3,6 +3,7 @@ import time
 import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
 from database import Database
+import threading
 AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
 AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
@@ -88,6 +89,8 @@ def start_system():
     global running
     running = True
     while running:
+        for thread in threading.enumerate():
+            print(thread.name)
         readSerial()
         time.sleep(1)
 
