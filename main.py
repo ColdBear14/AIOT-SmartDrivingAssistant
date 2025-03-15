@@ -6,7 +6,7 @@ from backend.database import Database
 AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
 AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
-
+running = False
 def connect(client):
     print("Successfully connected to Adafruit IO")
     for feed in AIO_FEED_ID:
@@ -61,7 +61,6 @@ def processData(data):
     elif  splitData[0] == "LUX":
         client.publish("bright", splitData[1])
     doc = {
-        'uid': ?,
         'sensor_type': splitData[0].lower(),
         'value': float(splitData[1])
     }
@@ -82,7 +81,12 @@ def readSerial():
                 mess = ""
             else:
                 mess = mess[end+1:]
+def start_system():
+    global running
+    running = True
+    while running:
+        readSerial()
+        time.sleep(5)
 
-while True:
-    readSerial()
-    time.sleep(5)
+if __name__ == '__main__':
+    start_system()
