@@ -61,7 +61,8 @@ def processData(data):
     elif  splitData[0] == "LUX":
         client.publish("bright", splitData[1])
     doc = {
-        'sensor': splitData[0].lower(),
+        'uid': ?,
+        'sensor_type': splitData[0].lower(),
         'value': float(splitData[1])
     }
     db.push_to_db('environment_sensor',doc)
