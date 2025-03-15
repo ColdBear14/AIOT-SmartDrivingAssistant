@@ -2,7 +2,7 @@ import sys
 import time
 import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
-from backend.database import Database
+from database import Database
 from config import config
 import threading
 
@@ -101,7 +101,7 @@ class IOTSystem:
     def start_system(self):
         if not self.running:
             self.running = True
-            self.thread = threading.Thread(target=self._run_system,daemon=True)
+            self.thread = threading.Thread(target=self._run_system)
             self.thread.start()
             print("System started in background")
         print("System is already online")
@@ -109,11 +109,14 @@ class IOTSystem:
     def stop_system(self):
         if self.running:
             self.running = False
-            if self.thread:
-                self.thread.join()
             print("System stopped.")
-        print("System is offline")
+        else:
+            print("System is offline")
     
 if __name__ == "__main__":
     iotsystem = IOTSystem()
-    iotsystem.start_system()
+    count = 1
+    while True:
+        if count == 1:
+            iotsystem.start_system()
+        count = 0
