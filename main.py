@@ -64,7 +64,7 @@ def processData(data):
         'sensor': splitData[0].lower(),
         'value': float(splitData[1])
     }
-    db.push_to_db(splitData[0].lower(),doc)
+    db.push_to_db('environment_sensor',doc)
     
 
 mess = ""
