@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT System Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>IoT System Control</h2>
+    <button id="startBtn" onclick="toggleSystem(true)">Start System</button>
+    <button id="stopBtn" onclick="toggleSystem(false)">Stop System</button>
+    <p id="status">System Status: <span id="systemStatus">Loading...</span></p>
+
+    <script>
+        async function toggleSystem(start) {
+            const endpoint = start ? "/system/on" : "/system/off";
+            try {
+                const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+                    method: "POST"
+                });
+                const data = await response.json();
+                console.log(data);
+                updateStatus();
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/system/status");
+                const data = await response.json();
+                const statusText = data.running ? "Online" : "Offline";
+                document.getElementById("systemStatus").innerText = statusText;
+                document.getElementById("systemStatus").style.color = data.running ? "green" : "red";
+            } catch (error) {
+                console.error("Error fetching status:", error);
+            }
+        }
+
+        // Update status when page loads
+        updateStatus();
+    </script>
+</body>
+</html>
