@@ -104,15 +104,15 @@ class IOTSystem:
             self.thread = threading.Thread(target=self._run_system,daemon=True)
             self.thread.start()
             print("System started in background")
-        print("System is already online")
+        else: 
+            print("System is already online")
         
     def stop_system(self):
         if self.running:
             self.running = False
-            if self.thread:
-                self.thread.join()
             print("System stopped.")
-        print("System is offline")
+        else:
+            print("System is offline")
     
 if __name__ == "__main__":
     iotsystem = IOTSystem()
