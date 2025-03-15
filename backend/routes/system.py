@@ -5,9 +5,9 @@ router = APIRouter()
 iot_system = IOTSystem()
 @router.post('/on')
 def turn_on():
-    iot_system.start_system()
+    iot_system.run()
     return {"message": "System turned ON"}
 @router.post('/off')
 def turn_off():
-    iot_system.stop_system()
+    iot_system.stop()
     return {"message": "System turned OFF"}
