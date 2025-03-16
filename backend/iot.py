@@ -1,28 +1,28 @@
 import sys
-import time
-import serial.tools.list_ports
+import asyncio
+import serial_asyncio
 from Adafruit_IO import MQTTClient
 from database import Database
 from config import config
-import threading
+import serial.tools.list_ports
 
-class IOTSystem(threading.Thread):
+class IOTSystem:
     AIO_FEED_ID = ['led', 'pump']
     AIO_USERNAME = config.aio_user
     AIO_KEY = config.aio_key
 
     def __init__(self):
-        super().__init__(daemon=True)
         self.db = Database()
         self.mess = ""
         self.running = False
+        self.reader = None
+        self.writer = None
         
-        port = IOTSystem.getPort()
+        port = self.getPort()
         if port != "None":
-            self.ser = serial.Serial(port=port, baudrate=115200)
-            print(self.ser)
+            asyncio.create_task(self.connect_serial(port))
         else:
-            self.ser = None  # Handle case where no port is available
+            print("No serial device found.")
 
         self.client = MQTTClient(self.AIO_USERNAME, self.AIO_KEY)
         self.client.on_connect = self.connect
@@ -31,32 +31,42 @@ class IOTSystem(threading.Thread):
         self.client.on_subscribe = self.subscribe
         self.client.connect()
         self.client.loop_background()
-    def client_connect(self):
-        self.client.loop_forever()
+
+    async def connect_serial(self, port):
+        """Async function to connect to serial device."""
+        try:
+            self.reader, self.writer = await serial_asyncio.open_serial_connection(url=port, baudrate=115200)
+            print(f"Connected to serial: {port}")
+        except Exception as e:
+            print(f"Failed to connect to serial: {e}")
+
     def connect(self, client):
-        print("Successfully connected to Adafruit IO")
+        print("Connected to Adafruit IO")
         for feed in IOTSystem.AIO_FEED_ID:
             client.subscribe(feed)
 
     def subscribe(self, client, userdata, mid, granted_qos):
-        print("Successfully subscribed to Adafruit IO")
+        print("Subscribed to Adafruit IO")
 
     def disconnect(self, client):
-        print("Disconnected from Adafruit IO. Attempting to reconnect...")
-        while True:  # Keep trying to reconnect
+        print("Disconnected. Reconnecting...")
+        asyncio.create_task(self.reconnect())
+
+    async def reconnect(self):
+        while True:
             try:
                 self.client.connect()
                 self.client.loop_background()
-                print("Reconnected to Adafruit IO!")
-                break  # Exit loop if successful
+                print("Reconnected!")
+                break
             except Exception as e:
-                print(f"Reconnect failed: {e}. Retrying in 5 seconds...")
-                time.sleep(5)
+                print(f"Reconnect failed: {e}, retrying in 5 sec...")
+                await asyncio.sleep(5)
 
     def message(self, client, feed_id, payload):
-        print("Received data from Adafruit IO:", payload)
-        if self.ser:
-            self.ser.write((str(payload) + "#").encode())
+        print("Received:", payload)
+        if self.writer:
+            self.writer.write(f"{payload}#".encode())
 
     @staticmethod
     def getPort():
@@ -66,28 +76,27 @@ class IOTSystem(threading.Thread):
                 return str(port).split(" ")[0]
         return "None"
 
-    def readSerial(self,uid):
-        if not self.ser:
+    async def readSerial(self, uid):
+        """Reads and processes serial data asynchronously."""
+        if not self.reader:
             print("No serial connection available.")
             return
-        bytesToRead = self.ser.inWaiting()
-        if bytesToRead > 0:
-            self.mess += self.ser.read(bytesToRead).decode("UTF-8")
-            while "!" in self.mess and "#" in self.mess:
-                start = self.mess.find("!")
-                end = self.mess.find("#")
-                self.processData(self.mess[start:end + 1],uid)
-                self.mess = self.mess[end + 1:] if end < len(self.mess) else ""
+        while self.running:
+            try:
+                data = await self.reader.readuntil(b"#")
+                data = data.decode("UTF-8").strip("!#")
+                await self.processData(data, uid)
+            except Exception as e:
+                print(f"Serial read error: {e}")
+            await asyncio.sleep(1)
 
-    def processData(self, data,uid):
-        data = data.replace("!", "").replace("#", "")
+    async def processData(self, data, uid):
+        """Processes incoming serial data and stores it in DB."""
         splitData = data.split(":")
         if len(splitData) < 2:
-            return  # Prevent errors on malformed data
-
-        sensor_type = splitData[0]
-        value = splitData[1]
-        print("Processed data:", sensor_type, value)
+            return
+        sensor_type, value = splitData[0], splitData[1]
+        print(f"Processed: {sensor_type} = {value}")
 
         sensor_map = {
             "TEMP": "temp",
@@ -102,34 +111,25 @@ class IOTSystem(threading.Thread):
             doc = {
                 'uid': uid,
                 'sensor_type': sensor_type.lower(), 
-                'value': float(value)
+                'value': float(value),
+                'timestamp': asyncio.get_event_loop().time()
             }
-            self.db.push_to_db('environment_sensor', doc)
+            await self.db.push_to_db('environment_sensor', doc)
         except ValueError:
-            print(f"Invalid data format for {sensor_type}: {value}")
-    def run(self):
-        while self.running:
-            self.readSerial(self.uid)
-            time.sleep(1)
-    def start_system(self,uid):
+            print(f"Invalid data format: {sensor_type} -> {value}")
+
+    async def start_system(self, uid):
         if not self.running:
-            self.uid = uid
             self.running = True
-            self._run_system(uid)
-            print("System started in background")
-        else: 
-            print("System is already online")
-            
-    def stop_system(self):
-        if self.running:
-            self.running = False
-            print("System stopped.")
+            asyncio.create_task(self.readSerial(uid))
+            print("IOT System started.")
         else:
-            print("System is offline")
-    
+            print("System already running.")
+
+    def stop_system(self):
+        self.running = False
+        print("IOT System stopped.")
+
 if __name__ == "__main__":
     iotsystem = IOTSystem()
-    iotsystem.start_system('123')
-    while True:
-        time.sleep(1)
-        print("Main thread is running...")
+    asyncio.run(iotsystem.start_system('123'))

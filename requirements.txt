@@ -1,0 +1,9 @@
+motor
+asyncio
+fastapi
+uvicorn
+passlib
+pydantic
+pyserial
+pyserial-asyncio
+Adafruit_IO

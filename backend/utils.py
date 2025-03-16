@@ -2,14 +2,10 @@ from pymongo import MongoClient
 from config import config
 from fastapi import Request, HTTPException
 
-
-
-client = MongoClient(config.mongo_url)
-db = client[config.db_name]
-
-def get_collection(name: str):
+def get_collection(client,name: str):
     '''Return MongoDB collections'''
-    return db[name]
+    return client[config.db_name][name]
+
 
 
 def get_uid(request: Request, users):

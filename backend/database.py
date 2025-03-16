@@ -1,33 +1,45 @@
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient 
 import requests
 import json
 from datetime import datetime
-from config import Config
+from config import config
 from utils import client
-# AdaFruit Credential
-config = Config()
+import asyncio
+
 #MongoDB setup
+client = AsyncIOMotorClient(config.mongo_url)
+
 class Database():
   def __init__(self,db_name = config.db_name):
     self.client = client
     self.db = self.client[db_name]
-    self.collections = set(self.db.list_collection_names())
+    self.collections = set()
     
-  def ensure_time_series_collection(self, collection_name):
+  async def _ensure_time_series_collection(self, collection_name):
     """Ensure the collection exists and is a time-series collection."""
     if collection_name not in self.collections:
-        self.db.create_collection(
+      existing_collections = await self.db.list_collection_names()
+      
+      if collection_name not in existing_collections:
+        await self.db.create_collection(
             collection_name,
             timeseries={"timeField": "timestamp", "granularity": "seconds"}
         )
-        self.collections.add(collection_name)  # Update internal cache
+        
         print(f"Collection '{collection_name}' created successfully.")
+        
+      self.collections.add(collection_name)  # Update internal cache
+
   
-  def push_to_db(self,collection_name,document):
-    self.ensure_time_series_collection(collection_name)
+  async def push_to_db(self,collection_name,document):
+    '''Insert a document to a collection'''
+    await self._ensure_time_series_collection(collection_name)
+    
     document['timestamp'] = datetime.now()
-    self.db[collection_name].insert_one(document)
-    # print(f'Store in MongoDB: {document}')
+    
+    result = await self.db[collection_name].insert_one(document)
+    
+    print(f'Store in MongoDB: {result}')
 
 
 if __name__ == '__main__':
