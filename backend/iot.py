@@ -104,7 +104,7 @@ class IOTSystem(threading.Thread):
                 'sensor_type': sensor_type.lower(), 
                 'value': float(value)
             }
-            self.db.push_to_db('environment_sensor', doc)
+            self.db.insert_ts_collection('environment_sensor', doc)
         except ValueError:
             print(f"Invalid data format for {sensor_type}: {value}")
     def run(self):
