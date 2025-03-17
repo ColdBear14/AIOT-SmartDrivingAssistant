@@ -1,4 +1,3 @@
-import sys
 import asyncio
 import serial_asyncio
 from Adafruit_IO import MQTTClient
@@ -6,13 +5,17 @@ from database import Database
 from config import config
 import serial.tools.list_ports
 
+from helpers.custom_logger import CustomLogger
+
 class IOTSystem:
     AIO_FEED_ID = ['led', 'pump']
     AIO_USERNAME = config.aio_user
     AIO_KEY = config.aio_key
 
     def __init__(self):
-        self.db = Database()
+        CustomLogger().get_logger().info("IOT System initialized.")
+
+        self.db = Database()._instance
         self.mess = ""
         self.running = False
         self.reader = None
@@ -22,7 +25,8 @@ class IOTSystem:
         if port != "None":
             asyncio.create_task(self.connect_serial(port))
         else:
-            print("No serial device found.")
+            # print("No serial device found.")
+            CustomLogger().get_logger().info("No serial device found.")
 
         self.client = MQTTClient(self.AIO_USERNAME, self.AIO_KEY)
         self.client.on_connect = self.connect
@@ -36,20 +40,25 @@ class IOTSystem:
         """Async function to connect to serial device."""
         try:
             self.reader, self.writer = await serial_asyncio.open_serial_connection(url=port, baudrate=115200)
-            print(f"Connected to serial: {port}")
+            # print(f"Connected to serial: {port}")
+            CustomLogger().get_logger().info(f"Connected to serial: {port}")
         except Exception as e:
-            print(f"Failed to connect to serial: {e}")
+            # print(f"Failed to connect to serial: {e}")
+            CustomLogger().get_logger().exception(f"Failed to connect to serial: {e}")
 
     def connect(self, client):
-        print("Connected to Adafruit IO")
+        # print("Connected to Adafruit IO")
+        CustomLogger().get_logger().info("Connected to Adafruit IO")
         for feed in IOTSystem.AIO_FEED_ID:
             client.subscribe(feed)
 
     def subscribe(self, client, userdata, mid, granted_qos):
-        print("Subscribed to Adafruit IO")
+        # print("Subscribed to Adafruit IO")
+        CustomLogger().get_logger().info("Subscribed to Adafruit IO")
 
     def disconnect(self, client):
-        print("Disconnected. Reconnecting...")
+        # print("Disconnected. Reconnecting...")
+        CustomLogger().get_logger().info("Disconnected. Reconnecting...")
         asyncio.create_task(self.reconnect())
 
     async def reconnect(self):
@@ -57,14 +66,17 @@ class IOTSystem:
             try:
                 self.client.connect()
                 self.client.loop_background()
-                print("Reconnected!")
+                # print("Reconnected!")
+                CustomLogger().get_logger().info("Reconnected!")
                 break
             except Exception as e:
-                print(f"Reconnect failed: {e}, retrying in 5 sec...")
+                # print(f"Reconnect failed: {e}, retrying in 5 sec...")
+                CustomLogger().get_logger().exception(f"Reconnect failed: {e}, retrying in 5 sec...")
                 await asyncio.sleep(5)
 
     def message(self, client, feed_id, payload):
-        print("Received:", payload)
+        # print("Received:", payload)
+        CustomLogger().get_logger().info(f"Received: {payload}")
         if self.writer:
             self.writer.write(f"{payload}#".encode())
 
@@ -79,7 +91,8 @@ class IOTSystem:
     async def readSerial(self, uid):
         """Reads and processes serial data asynchronously."""
         if not self.reader:
-            print("No serial connection available.")
+            # print("No serial connection available.")
+            CustomLogger().get_logger().warning("No serial connection available.")
             return
         while self.running:
             try:
@@ -87,7 +100,8 @@ class IOTSystem:
                 data = data.decode("UTF-8").strip("!#")
                 await self.processData(data, uid)
             except Exception as e:
-                print(f"Serial read error: {e}")
+                # print(f"Serial read error: {e}")
+                CustomLogger().get_logger().exception(f"Serial read error: {e}")
             await asyncio.sleep(1)
 
     async def processData(self, data, uid):
@@ -96,7 +110,8 @@ class IOTSystem:
         if len(splitData) < 2:
             return
         sensor_type, value = splitData[0], splitData[1]
-        print(f"Processed: {sensor_type} = {value}")
+        # print(f"Processed: {sensor_type} = {value}")
+        CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
 
         sensor_map = {
             "TEMP": "temp",
@@ -116,19 +131,23 @@ class IOTSystem:
             }
             await self.db.push_to_db('environment_sensor', doc)
         except ValueError:
-            print(f"Invalid data format: {sensor_type} -> {value}")
+            # print(f"Invalid data format: {sensor_type} -> {value}")
+            CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
 
     async def start_system(self, uid):
         if not self.running:
             self.running = True
             asyncio.create_task(self.readSerial(uid))
-            print("IOT System started.")
+            # print("IOT System started.")
+            CustomLogger().get_logger().info("IOT System started.")
         else:
-            print("System already running.")
+            # print("System already running.")
+            CustomLogger().get_logger().warning("System already running.")
 
     def stop_system(self):
         self.running = False
-        print("IOT System stopped.")
+        # print("IOT System stopped.")
+        CustomLogger().get_logger().info("IOT System stopped.")
 
 if __name__ == "__main__":
     iotsystem = IOTSystem()

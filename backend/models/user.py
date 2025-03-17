@@ -1,7 +1,5 @@
 from passlib.context import CryptContext
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
-from typing import Literal
 import secrets
 
 
@@ -43,11 +41,3 @@ class User:
             {'$set': {User.FIELD_SESSION: session_id}}
         )
         return session_id
-    
-class UserRequest(BaseModel):
-    username: str
-    password: str
-    
-class SensorRequest(BaseModel):
-    sensor_type: Literal["temp","humid","lux","dist"]
-    amt: int = Field(...,ge=1)

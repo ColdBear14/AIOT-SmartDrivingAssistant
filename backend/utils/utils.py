@@ -2,11 +2,9 @@ from pymongo import MongoClient
 from config import config
 from fastapi import Request, HTTPException
 
-def get_collection(client,name: str):
+def get_collection(client, name: str):
     '''Return MongoDB collections'''
     return client[config.db_name][name]
-
-
 
 def get_uid(request: Request, users):
     session_id = request.cookies.get('session_id')

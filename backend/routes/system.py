@@ -1,6 +1,6 @@
 from pymongo.collection import Collection
 from fastapi import APIRouter, Request, Depends, HTTPException
-from iot import IOTSystem
+from services.iot import IOTSystem
 from utils import get_collection
 router = APIRouter()
 

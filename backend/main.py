@@ -2,27 +2,34 @@ import sys
 import time
 import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
-from database import Database
+from services.database import Database
 import threading
+
+from helpers.custom_logger import CustomLogger
+
 AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
 AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
 running = False
 
 def connect(client):
-    print("Successfully connected to Adafruit IO")
+    # print("Successfully connected to Adafruit IO")
+    CustomLogger().get_logger().info("Successfully connected to Adafruit IO")
     for feed in AIO_FEED_ID:
         client.subscribe(feed)
 
 def subcribe(client, userdata, mid, granted_qos):
-    print("Successfully subscribed to Adafruit IO")
+    # print("Successfully subscribed to Adafruit IO")
+    CustomLogger().get_logger().info("Successfully subscribed to Adafruit IO")
 
 def disconnect(client):
-    print("Successfully disconnected from Adafruit IO")
+    # print("Successfully disconnected from Adafruit IO")
+    CustomLogger().get_logger().info("Successfully disconnected from Adafruit IO")
     sys.exit(1)
 
 def message(client, feed_id, payload):
-    print("Received data from Adafruit IO: " + payload)
+    # print("Received data from Adafruit IO: " + payload)
+    CustomLogger().get_logger().info("Received data from Adafruit IO: " + payload)
     ser.write((str(payload) + "#").encode())
 
 def getPort():
@@ -49,8 +56,8 @@ client.on_subscribe = subcribe
 client.connect()
 client.loop_background()
 
-db = Database()
-mess = ""
+db = Database()._instance
+
 def processData(data):
     data = data.replace("!", "")
     data = data.replace("#", "")
