@@ -12,4 +12,6 @@ def get_user_collection():
 async def get_sensor_data(sensor:SensorRequest,request: Request,sensors_collection=Depends(get_sensor_collection)):
     uid = get_uid(request=request)
     
-    sensors_collection.find({'uid': uid})
+    sensor_data = list(sensors_collection.find({'uid': uid,'sensor_type': sensor.sensor_type}).limit(sensor.amt))
+    
+    return {'sensor_data':sensor_data, 'message': 'Retrieve sensor data successful'}

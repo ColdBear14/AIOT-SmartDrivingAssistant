@@ -40,7 +40,6 @@ class Database():
      
   def insert_ts_collection(self,collection_name,document):
     self.ensure_time_series_collection(collection_name)
-    document['timestamp'] = datetime.now()
     
     self.insert_collection(collection_name,document)
     
@@ -50,6 +49,11 @@ class Database():
   
   def get_sensor_collection(self):
     return self.get_collection('enviroment_sensor')
+  
+  def get_user_collection(self):
+    return self.get_collection('user')
+  def get_user_config(self):
+    return self.get_collection('user_config')
     
 
 
