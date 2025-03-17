@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Sensor API</title>
     <script>
+        document.cookie = "session_id=fake-session-123; path=/";
+        
         async function sendSensorData(event) {
             event.preventDefault(); // Prevent page reload
 
@@ -16,6 +18,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
+                credentials:"include",
                 body: JSON.stringify({
                     sensor_type: sensorType,
                     amt: parseInt(amt)

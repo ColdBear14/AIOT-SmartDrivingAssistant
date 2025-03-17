@@ -16,7 +16,9 @@ class Database():
   def insert_collection(self,collection_name,document):
     result = self._db[collection_name].insert_one(document)
     print(f'Store in MongoDB: {result}')
-    
+  def find_sensor_data(self,uid,sensor_type,amt):
+    return list(self.get_sensor_collection().find({'uid': uid,'sensor_type': sensor_type}).limit(amt))
+  
   def get_collection(self,name: str):
     '''Return MongoDB collections'''
     return self._client[config.db_name][name]
@@ -26,10 +28,11 @@ class Database():
   
   def get_user_collection(self):
     return self.get_collection('user')
+  
   def get_user_config(self):
     return self.get_collection('user_config')
     
-
+db = Database()
 
 if __name__ == '__main__':
   db = Database('test',expire_time=1)
