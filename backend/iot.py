@@ -66,7 +66,7 @@ class IOTSystem(threading.Thread):
                 return str(port).split(" ")[0]
         return "None"
 
-    def readSerial(self):
+    def readSerial(self,uid):
         if not self.ser:
             print("No serial connection available.")
             return
@@ -76,10 +76,10 @@ class IOTSystem(threading.Thread):
             while "!" in self.mess and "#" in self.mess:
                 start = self.mess.find("!")
                 end = self.mess.find("#")
-                self.processData(self.mess[start:end + 1])
+                self.processData(self.mess[start:end + 1],uid)
                 self.mess = self.mess[end + 1:] if end < len(self.mess) else ""
 
-    def processData(self, data):
+    def processData(self, data,uid):
         data = data.replace("!", "").replace("#", "")
         splitData = data.split(":")
         if len(splitData) < 2:
@@ -99,24 +99,28 @@ class IOTSystem(threading.Thread):
             self.client.publish(sensor_map[sensor_type], value)
 
         try:
-            doc = {'sensor_type': sensor_type.lower(), 'value': float(value)}
+            doc = {
+                'uid': uid,
+                'sensor_type': sensor_type.lower(), 
+                'value': float(value)
+            }
             self.db.push_to_db('environment_sensor', doc)
         except ValueError:
             print(f"Invalid data format for {sensor_type}: {value}")
-    def _run_system(self):
-        while self.running:
-            self.readSerial()
-            time.sleep(1)
-            
     def run(self):
+        while self.running:
+            self.readSerial(self.uid)
+            time.sleep(1)
+    def start_system(self,uid):
         if not self.running:
+            self.uid = uid
             self.running = True
-            self._run_system()
+            self._run_system(uid)
             print("System started in background")
         else: 
             print("System is already online")
-        
-    def stop(self):
+            
+    def stop_system(self):
         if self.running:
             self.running = False
             print("System stopped.")
@@ -125,7 +129,7 @@ class IOTSystem(threading.Thread):
     
 if __name__ == "__main__":
     iotsystem = IOTSystem()
-    iotsystem.start()
+    iotsystem.start_system('123')
     while True:
         time.sleep(1)
         print("Main thread is running...")
