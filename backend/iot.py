@@ -7,7 +7,7 @@ from config import config
 import threading
 
 class IOTSystem(threading.Thread):
-    AIO_FEED_ID = ['led', 'pump']
+    AIO_FEED_ID = ['led', 'fan']
     AIO_USERNAME = config.aio_user
     AIO_KEY = config.aio_key
 
@@ -56,7 +56,7 @@ class IOTSystem(threading.Thread):
     def message(self, client, feed_id, payload):
         print("Received data from Adafruit IO:", payload)
         if self.ser:
-            self.ser.write((str(payload) + "#").encode())
+            self.ser.write("!" + str(feed_id) + ":" + (str(payload) + "#").encode())
 
     @staticmethod
     def getPort():
