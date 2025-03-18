@@ -4,7 +4,7 @@ import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
 from database import Database
 import threading
-AIO_FEED_ID = ["led","pump"]
+AIO_FEED_ID = ["led","fan"]
 AIO_USERNAME = "NopeHy14"
 AIO_KEY = "aio_GiIc74cdAMPt214e6umJWC5MHNnS"
 running = False
@@ -22,8 +22,8 @@ def disconnect(client):
     sys.exit(1)
 
 def message(client, feed_id, payload):
-    print("Received data from Adafruit IO: " + payload)
-    ser.write((str(payload) + "#").encode())
+    print("Received data from Adafruit IO: " "!" + str(feed_id) + ":" + str(payload) + "#")
+    ser.write(("!" + str(feed_id) + ":" + str(payload) + "#").encode())
 
 def getPort():
     ports = serial.tools.list_ports.comports()

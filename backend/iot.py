@@ -56,7 +56,7 @@ class IOTSystem(threading.Thread):
     def message(self, client, feed_id, payload):
         print("Received data from Adafruit IO:", payload)
         if self.ser:
-            self.ser.write("!" + str(feed_id) + ":" + (str(payload) + "#").encode())
+            self.ser.write(("!" + str(feed_id) + ":" + str(payload) + "#").encode())
 
     @staticmethod
     def getPort():
