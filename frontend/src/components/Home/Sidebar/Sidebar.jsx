@@ -25,7 +25,7 @@ const SideBar = () => {
           <div className={styles.icon}>
             <i className="fa-solid fa-gears"></i>
           </div>
-          Services
+          Devices
         </NavLink></li>
         <li><NavLink to="/profile" className={({ isActive }) => clsx(
           styles.sidebarLink,

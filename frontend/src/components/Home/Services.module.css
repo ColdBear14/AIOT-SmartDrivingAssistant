@@ -1,5 +1,20 @@
-.servicesToggle{
+.servicesToggle {
     background-color: #fff;
     border-radius: 20px;
     box-shadow: 6px 12px 12px 0 rgba(0, 0, 0, 0.12);
+    padding: 1rem;
+}
+
+.servicesToggle input[type="checkbox"] {
+    margin-right: 1rem;
+    margin-left: 0;
+    transform: translateY(90%);
+}
+
+.servicesToggleHeader {
+    margin-bottom: 0.5rem;
+}
+
+.servicesToggleText {
+    color: #666;
 }
