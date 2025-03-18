@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
-from utils import get_collection, get_uid
-from models import SensorRequest
+from utils.utils import get_collection, get_uid
+from models.request import SensorRequest
 router = APIRouter()
 
 def get_sensor_collection():

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends,Response, HTTPException, Request
-from utils import get_collection
-from models import User, UserRequest
+from utils.utils import get_collection
+from models.user import User
+from models.request import UserRequest
 
 router = APIRouter()
 

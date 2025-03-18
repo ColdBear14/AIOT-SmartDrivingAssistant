@@ -1,22 +1,44 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.custom_logger import CustomLogger
+
 import asyncio
 import serial_asyncio
 from Adafruit_IO import MQTTClient
-from database import Database
-from config import config
+from services.database import Database
 import serial.tools.list_ports
 
-from helpers.custom_logger import CustomLogger
-
 class IOTSystem:
-    AIO_FEED_ID = ['led', 'pump']
-    AIO_USERNAME = config.aio_user
-    AIO_KEY = config.aio_key
+    _instance = None
 
-    def __init__(self):
+    __AIO_FEED_ID = ['led', 'pump']
+
+    def __new__(cls, config=None):
+        if not cls._instance:
+            cls._instance = super(IOTSystem, cls).__new__(cls)
+            cls._instance._init_iot_system(config)
+        return cls._instance
+
+    def _init_iot_system(self, config=None):
         CustomLogger().get_logger().info("IOT System initialized.")
+        
+        # Auto load config from .env file if not provided 
+        if config is None or not config.contains("aio_user") or not config.contains("aio_key"):
+            from dotenv import load_dotenv
+            import os
+
+            load_dotenv()
+            config = {
+                "aio_user": os.getenv("AIO_USER_NAME"),
+                "aio_key": os.getenv("AIO_KEY")
+            }
+            CustomLogger().get_logger().info("IOT System's config: " + str(config))
+
+        self.__AIO_USERNAME = config["aio_user"]
+        self.__AIO_KEY = config["aio_key"]
 
         self.db = Database()._instance
-        self.mess = ""
         self.running = False
         self.reader = None
         self.writer = None
@@ -28,7 +50,7 @@ class IOTSystem:
             # print("No serial device found.")
             CustomLogger().get_logger().info("No serial device found.")
 
-        self.client = MQTTClient(self.AIO_USERNAME, self.AIO_KEY)
+        self.client = MQTTClient(self.__AIO_USERNAME, self.__AIO_KEY)
         self.client.on_connect = self.connect
         self.client.on_disconnect = self.disconnect
         self.client.on_message = self.message
@@ -49,7 +71,7 @@ class IOTSystem:
     def connect(self, client):
         # print("Connected to Adafruit IO")
         CustomLogger().get_logger().info("Connected to Adafruit IO")
-        for feed in IOTSystem.AIO_FEED_ID:
+        for feed in IOTSystem.__AIO_FEED_ID:
             client.subscribe(feed)
 
     def subscribe(self, client, userdata, mid, granted_qos):
@@ -150,5 +172,6 @@ class IOTSystem:
         CustomLogger().get_logger().info("IOT System stopped.")
 
 if __name__ == "__main__":
-    iotsystem = IOTSystem()
+    CustomLogger().get_logger().info("IOT System: __main__")
+    iotsystem = IOTSystem()._instance
     asyncio.run(iotsystem.start_system('123'))

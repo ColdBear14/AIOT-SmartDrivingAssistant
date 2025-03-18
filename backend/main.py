@@ -1,11 +1,14 @@
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.custom_logger import CustomLogger
+
+import sys
 import time
 import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
 from services.database import Database
 import threading
-
-from helpers.custom_logger import CustomLogger
 
 AIO_FEED_ID = ["led","pump"]
 AIO_USERNAME = "NopeHy14"
@@ -102,4 +105,5 @@ def start_system():
         time.sleep(1)
 
 if __name__ == '__main__':
+    CustomLogger().get_logger().info("Main: __main__")
     start_system()

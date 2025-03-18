@@ -1,32 +1,42 @@
-from motor.motor_asyncio import AsyncIOMotorClient 
-from datetime import datetime
-from config import config
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.custom_logger import CustomLogger
 
+from motor.motor_asyncio import AsyncIOMotorClient 
+from datetime import datetime
+
 #MongoDB setup
-client = AsyncIOMotorClient(config.mongo_url)
+# client = AsyncIOMotorClient(config.mongo_url)
 
 class Database:
     _instance = None
 
-    def __new__(cls, db_name=config.db_name):
-        if (db_name == None):
-          if cls._instance is None:
-              cls._instance = super(Database, cls).__new__(cls)
-              cls._instance._init_database()
-          return cls._instance
-        else:
-            CustomLogger().get_logger().info("Create test database.")
-            return super(Database, cls).__new__(cls)
+    def __new__(cls, config=None, test_mode=False):
+        if cls._instance is None:
+            cls._instance = super(Database, cls).__new__(cls)
+            cls._instance._init_database(config, test_mode)
+        return cls._instance
 
-    def _init_database(self, db_name=config.db_name):
-        if self.__initialized:
-            return
-        self.client = client
-        self.db = self.client[db_name]
+    def _init_database(self, config, test_mode=False):
+        if config == None or not config.contains("mongo_url") or not config.contains("db_name"):
+            from dotenv import load_dotenv
+            import os
+
+            load_dotenv()
+            config = {
+                "mongo_url": os.getenv("MONGODB_URL"),
+                "db_name": os.getenv("MONGODB_DB_NAME")
+            }
+            CustomLogger().get_logger().info("Database's config: " + str(config))
+
+        self.client = AsyncIOMotorClient(config["mongo_url"])
+        if test_mode:
+            CustomLogger().get_logger().info("Database: Test mode.")
+            self.db = self.client['test']
+        else:
+            self.db = self.client[config["db_name"]]
         self.collections = set()
-        self.__initialized = True
 
     async def _ensure_time_series_collection(self, collection_name):
         """Ensure the collection exists and is a time-series collection."""
@@ -42,7 +52,7 @@ class Database:
                 CustomLogger().get_logger().info(f"Collection '{collection_name}' created successfully.")
 
             self.collections.add(collection_name)  # Update internal cache
-            CustomLogger().get_logger().info(f"Ensured time series collection: {collection_name}")
+            CustomLogger().get_logger().info(f"Successfully ensure time series collection: {collection_name}")
 
     async def push_to_db(self, collection_name, document):
         '''Insert a document to a collection'''
@@ -57,9 +67,10 @@ class Database:
 
 
 if __name__ == '__main__':
-  db = Database('test')
-  document = {
-    'a': 'a',
-    'b': 'b'
-  }
-  db.push_to_db('collection',document)
+  CustomLogger().get_logger().info("Database: __main__")
+  db = Database(None, True)
+#   document = {
+#     'a': 'a',
+#     'b': 'b'
+#   }
+#   db.push_to_db('collection',document)

@@ -22,6 +22,9 @@ class CustomLogger:
                 datefmt="%Y-%m-%d %H:%M:%S",
                 handlers=[RichHandler(rich_tracebacks=True)]
             )
+            # Suppress debug logs from MongoDB driver
+            logging.getLogger("motor").setLevel(logging.WARNING)
+            logging.getLogger("pymongo").setLevel(logging.WARNING)
 
             self.log = logging.getLogger()
 
