@@ -45,7 +45,11 @@ class IOTSystem:
         
         port = self.getPort()
         if port != "None":
-            asyncio.create_task(self.connect_serial(port))
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self.connect_serial(port)) 
+            except RuntimeError:
+                asyncio.run(self.connect_serial(port))
         else:
             # print("No serial device found.")
             CustomLogger().get_logger().info("No serial device found.")

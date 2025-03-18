@@ -1,6 +1,6 @@
 pymongo
 asyncio
-dotenv
+python-dotenv
 fastapi
 uvicorn
 passlib
