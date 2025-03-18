@@ -1,5 +1,6 @@
-motor
+pymongo
 asyncio
+dotenv
 fastapi
 uvicorn
 passlib
