@@ -1,0 +1,40 @@
+.list {
+  list-style: none;
+  margin-top: 2rem;
+  padding-left: 0rem;
+}
+.list li{
+  margin: 1rem;
+}
+
+.logo {
+  display: flex;
+  margin: 1rem;
+  align-items: center;
+}
+
+.SDA {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.logoImg {
+  margin-right: 1rem;
+}
+
+.sidebarLink {
+  color: #B1B1B1;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.active {
+  color: var(--primary-color);
+}
+
+.icon {
+  display: inline-block;
+  width: 2rem;
+  margin-right: 1rem;
+}
