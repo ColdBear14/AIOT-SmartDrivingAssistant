@@ -1,0 +1,80 @@
+.avatarContainer{
+position: relative;
+display: block;
+}
+.editIcon {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: #0056b3;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.edit-icon:hover {
+  background-color: #003f8a;
+}
+
+.inputField {
+  border-radius: 20px; /* Tăng độ cong của góc */
+  border: 1px solid #ced4da;
+  padding: 12px;
+  font-size: 16px;
+  width: 100%;
+  transition: border-color 0.3s ease-in-out;
+  outline: none; /* Xóa viền xanh khi focus */
+  box-shadow: none; /* Xóa bóng mờ */
+}
+
+.inputField:focus {
+  border-color: #007bff; /* Khi focus, viền đổi màu */
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.formControl {
+  color: #718EBF; /* Màu chữ */
+  font-weight: 400; /* Regular */
+}
+
+/* Đảm bảo placeholder có màu xám nhẹ hơn */
+.formControl::placeholder {
+  color: #B0BEC5; /* Màu xám nhạt hơn */
+  font-weight: 400;
+}
+
+.submitButton {
+  background-color: #1814F3; /* Màu nền */
+  border: none; /* Loại bỏ viền */
+  color: white; /* Màu chữ */
+  width: 190px; /* Chiều rộng */
+  height: 50px; /* Chiều cao */
+  border-radius: 10px; /* Bo góc */
+  font-size: 16px; /* Cỡ chữ */
+  font-weight: 600; /* Đậm vừa */
+  cursor: pointer; /* Biểu tượng con trỏ */
+  transition: background 0.3s ease; /* Hiệu ứng hover */
+}
+
+.submitButton:hover {
+  background-color: #0F0BC5; /* Màu hover */
+}
+
+.saveButtonContainer {
+  display: flex;
+  justify-content: flex-end; /* Đẩy nút về bên phải */
+}
