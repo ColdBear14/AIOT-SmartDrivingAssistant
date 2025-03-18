@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sensor API</title>
+    <script>
+        document.cookie = "session_id=fake-session-123; path=/";
+        
+        async function sendSensorData(event) {
+            event.preventDefault(); // Prevent page reload
+
+            const sensorType = document.getElementById("sensor_type").value;
+            const amt = document.getElementById("amt").value;
+
+            const response = await fetch("http://127.0.0.1:8000/data/sensor_data", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials:"include",
+                body: JSON.stringify({
+                    sensor_type: sensorType,
+                    amt: parseInt(amt)
+                })
+            });
+
+            const result = await response.json();
+            document.getElementById("result").innerText = JSON.stringify(result, null, 2);
+        }
+    </script>
+</head>
+<body>
+    <h2>Test Sensor API</h2>
+    <form onsubmit="sendSensorData(event)">
+        <label>Sensor Type:</label>
+        <input type="text" id="sensor_type" required><br><br>
+
+        <label>Amount:</label>
+        <input type="number" id="amt" required><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <h3>Response:</h3>
+    <pre id="result"></pre>
+</body>
+</html>

@@ -1,18 +1,13 @@
 from pymongo.collection import Collection
 from fastapi import APIRouter, Request, Depends, HTTPException
 from iot import IOTSystem
-from utils import get_collection
+from database import db
 router = APIRouter()
 
 iot_system = IOTSystem()
-def get_user_collection():
-    return get_collection('user')
-
-def get_sensor_collection():
-    return get_collection('environment_sensor')
 
 @router.post('/on')
-async def turn_on(request: Request, users=Depends(get_user_collection)):
+async def turn_on(request: Request, users=Depends(db.get_user_collection)):
     session_id = request.cookies.get('session_id')
     if not session_id:
         raise HTTPException(status_code=400, detail="No active session found")

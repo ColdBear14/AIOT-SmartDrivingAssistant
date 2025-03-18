@@ -1,10 +1,12 @@
 import sys
 import time
+import serial
 import serial.tools.list_ports
 from Adafruit_IO import MQTTClient
 from database import Database
 from config import config
 import threading
+from datetime import datetime
 
 class IOTSystem(threading.Thread):
     AIO_FEED_ID = ['led', 'fan']
@@ -85,7 +87,7 @@ class IOTSystem(threading.Thread):
         if len(splitData) < 2:
             return  # Prevent errors on malformed data
 
-        sensor_type = splitData[0]
+        sensor_type = splitData[0].lower()
         value = splitData[1]
         print("Processed data:", sensor_type, value)
 
@@ -100,13 +102,17 @@ class IOTSystem(threading.Thread):
 
         try:
             doc = {
-                'uid': uid,
-                'sensor_type': sensor_type.lower(), 
-                'value': float(value)
+                'timestamp': datetime.now(),
+                'metadata':{
+                    'sensor_type': sensor_type,
+                    'uid': uid
+                },
+                'val': value
             }
-            self.db.push_to_db('environment_sensor', doc)
+            self.db.insert_collection('environment_sensor', doc)
         except ValueError:
             print(f"Invalid data format for {sensor_type}: {value}")
+            
     def run(self):
         while self.running:
             self.readSerial(self.uid)
