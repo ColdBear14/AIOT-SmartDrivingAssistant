@@ -1,20 +1,18 @@
 from fastapi import APIRouter, Depends,Response, HTTPException, Request
-from utils.utils import get_collection
 from models.user import User
 from models.request import UserRequest
 
+from services.database import Database
+
 router = APIRouter()
 
-def get_user_collection():
-    return get_collection("user") 
-
 @router.post("/register")
-async def register(user: UserRequest, users=Depends(get_user_collection)):
+async def register(user: UserRequest, users=Depends(Database()._instance.get_user_collection)):
     user = User(user.username, user.password)
     return user.save(users)
 
 @router.post("/login")
-async def login(user: UserRequest, response: Response, users=Depends(get_user_collection)):
+async def login(user: UserRequest, response: Response, users=Depends(Database()._instance.get_user_collection)):
     user = User(user.username, user.password)
     session_id = user.authenticate(users) 
     
@@ -28,7 +26,7 @@ async def login(user: UserRequest, response: Response, users=Depends(get_user_co
     return {'message': 'Login successful'}
 
 @router.post("/logout")
-async def logout(request: Request, response: Response, users=Depends(get_user_collection)):
+async def logout(request: Request, response: Response, users=Depends(Database()._instance.get_user_collection)):
     session_id = request.cookies.get("session_id") 
     if not session_id:
         raise HTTPException(status_code=400, detail="No active session found")

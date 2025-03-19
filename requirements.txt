@@ -8,3 +8,5 @@ pydantic
 pyserial
 pyserial-asyncio
 Adafruit_IO
+redis
+datetime

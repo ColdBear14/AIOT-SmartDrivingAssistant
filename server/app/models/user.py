@@ -2,24 +2,23 @@ from passlib.context import CryptContext
 from fastapi import HTTPException
 import secrets
 
-
 class User:
-    __pwd_context = CryptContext(schemes=['bcrypt'],deprecated='auto')
+    __pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
     
     FIELD_USERNAME = 'username'
     FIELD_PASSWORD = 'password'
     FIELD_SESSION = 'session_id'
-    def __init__(self,username:str,password:str):
+    def __init__(self, username:str, password:str):
         self.username = username
         self.password = password
         
     def _hash_pw(self) -> str:
         return User.__pwd_context.hash(self.password)
     
-    def _verify_pw(self,hashed_pw:str) -> bool:
-        return User.__pwd_context.verify(self.password,hashed_pw)
+    def _verify_pw(self, hashed_pw:str) -> bool:
+        return User.__pwd_context.verify(self.password, hashed_pw)
     
-    def save(self,user_collection):
+    def save(self, user_collection):
         if user_collection.find_one({User.FIELD_USERNAME: self.username}):
             raise HTTPException(status_code=400,detail="Username already exists")
         
@@ -30,7 +29,7 @@ class User:
         })
         return {'message': 'User registered successful'}
     
-    def authenticate(self,user_collection):
+    def authenticate(self, user_collection):
         user = user_collection.find_one({User.FIELD_USERNAME: self.username})
         if not (user and self._verify_pw(user[User.FIELD_PASSWORD])):
             raise HTTPException(status_code=400, detail="Invalid credentials")
