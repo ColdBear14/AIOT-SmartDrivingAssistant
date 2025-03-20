@@ -17,13 +17,16 @@ app.add_middleware(
     allow_methods=["*"],  # Cho phép tất cả các phương thức (POST, GET, OPTIONS, ...)
     allow_headers=["*"],  # Cho phép tất cả các headers
 )
-app.add_middleware(AuthMiddleware, whitelist=["/auth/login", "/auth/register"])
+app.add_middleware(AuthMiddleware)
 
 if __name__ == '__main__':
     CustomLogger().get_logger().info("main: __main__")
 
     from routes.auth_routes import router as auth_router
     app.include_router(auth_router, prefix='/auth')
+
+    from routes.user_routes import router as user_router
+    app.include_router(user_router, prefix='/user')
 
     from routes.sensor_routes import router as sensor_router
     app.include_router(sensor_router, prefix='/sensor')

@@ -1,4 +1,10 @@
+# import os
+# import sys
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from utils.custom_logger import CustomLogger
+
 from fastapi import APIRouter, HTTPException, Request, Response
+from starlette.responses import JSONResponse
 
 from models.request import UserRequest
 from services.auth_service import AuthService
@@ -7,69 +13,64 @@ router = APIRouter()
 
 @router.post("/register")
 async def register(user: UserRequest):
-    if not user.username or not user.password:
+    if not user or not user.username or not user.password:
         raise HTTPException(status_code=400, detail="Invalid request")
     
     try:
+        CustomLogger().get_logger().info(f"Register request for user: {user.username}")
         result = AuthService()._register(user)
-        
+        CustomLogger().get_logger().info(f"Register result: {result}")
+
         if result:
-            return {"message": "User created successfully"}
+            return JSONResponse(content={"message": "User created successfully"}, status_code=201)
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
 
     except Exception as e:
         if e.args[0] == "Username already exists":
             raise HTTPException(status_code=400, detail="Username already exists")
-        elif e.args[0] == "UserRequest object is required":
-            raise HTTPException(status_code=400, detail="UserRequest object is required")
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.post("/login")
+@router.patch("/login")
 async def login(user: UserRequest, response: Response):
     if not user.username or not user.password:
         raise HTTPException(status_code=400, detail="Invalid request")
 
     try:
-        session_id, user = AuthService()._authenticate(user)
+        CustomLogger().get_logger().info(f"Login request for user: {user.username}")
+        session_id, userid = AuthService()._authenticate(user)
+        CustomLogger().get_logger().info(f"Login result: {session_id} - {userid}")
+
         if session_id:
-            response.set_cookie(
-                key="session_id",
-                value=session_id,
-                httponly=True,
-                secure=True,
-                samesite="Strict",
-                max_age=3600
-            )
+            response = JSONResponse(content={"message": "Login successful"}, status_code=200)
+            response = AuthService()._create_cookie_with_session(response, session_id)
             
-            return {'message': 'Login successful', 'data': user}
+            return response
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
 
     except Exception as e:
         if e.args[0] == "Invalid credentials":
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        elif e.args[0] == "UserRequest object is required":
-            raise HTTPException(status_code=400, detail="UserRequest object is required")
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.post("/logout")
+@router.patch("/logout")
 async def logout(request: Request, response: Response):
     session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="No active session found")
 
     try:
         result = AuthService()._del_session(session_id)
         if result:
+            response = JSONResponse(content={"message": "Logout successful"}, status_code=200)
             response.delete_cookie("session_id")  # Delete cookie from client
-            return {"message": "Logged out successfully"}
+            return response
         else:
             raise HTTPException(status_code=500, detail="Session not found")
     
     except Exception as e:
-        if e.args[0] == "Session ID is required":
-            raise HTTPException(status_code=400, detail="Session ID is required")
-        else:
-            raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
