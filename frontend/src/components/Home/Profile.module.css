@@ -7,7 +7,7 @@
   position: absolute;
   bottom: 0.625rem;
   right: 0.625rem;
-  background-color: #0056b3;
+  background-color: var(--primary-color);
   color: white;
   width: 2rem;
   height: 2rem;
@@ -48,11 +48,11 @@
 }
 
 .formControl {
-  color: #718EBF;
+  color: var(--primary-color);
   font-weight: 400;
-  padding: 1rem;
+  padding: 0.8rem;
   border-radius: 1rem;
-  margin: 1rem;
+  margin: 0.4rem 1rem 1rem 1rem;
 }
 
 .formControl::placeholder {
@@ -61,23 +61,28 @@
 }
 
 .submitButton {
-  background-color: #1814F3;
+  background-color: var(--primary-color);
   border: none;
   color: white;
-  width: 11.875rem;
+  width: 11rem;
   height: 3.125rem;
   border-radius: 0.625rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.3s ease;
+  margin-top: 1rem;
 }
 
 .submitButton:hover {
-  background-color: #0F0BC5;
+  background-color: #003f8a;
 }
 
 .saveButtonContainer {
   display: flex;
   justify-content: flex-end;
+}
+
+.smallIcon {
+  font-size: 12px;
 }

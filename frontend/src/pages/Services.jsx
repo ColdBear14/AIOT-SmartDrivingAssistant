@@ -22,8 +22,8 @@ function Services() {
         </div>
         <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
           <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="temperatureToggle">
-            <h4 className={styles.servicesToggleHeader}>Temperature</h4>
-            <div className={styles.servicesToggleText}>Auto Adjust temperature</div>
+            <h4 className={styles.servicesToggleHeader}>Air Conditioning</h4>
+            <div className={styles.servicesToggleText}>Automatic air conditioning</div>
           </label>
           <input type="checkbox" className="form-check-input" id="temperatureToggle" checked={temperatureChecked} onChange={() => setTemperatureChecked(!temperatureChecked)}/>
         </div>
@@ -31,7 +31,7 @@ function Services() {
       <div className="col-md-4">
       <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
           <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="driverToggle">
-            <h4 className={styles.servicesToggleHeader}>Driver</h4>
+            <h4 className={styles.servicesToggleHeader}>Driver monitoring</h4>
             <div className={styles.servicesToggleText}>Check the driver's status</div>
           </label>
           <input type="checkbox" className="form-check-input" id="driverToggle" checked={driverChecked} onChange={() => setDriverChecked(!driverChecked)}/>

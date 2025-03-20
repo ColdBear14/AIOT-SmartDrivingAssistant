@@ -35,13 +35,3 @@
 .servicesToggleLabel {
     flex-grow: 1;
 }
-
-.servicesToggleLabel::before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    display: block;
-    width: 84px;
-    height: 74px;
-}

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styles from "../components/Home/Profile.module.css"; // Import CSS module
-import defaultAvatar from "../assets/images/Avatar.png";
-import { FaPencilAlt } from "react-icons/fa";
+import defaultAvatar from "../assets/images/avt.jpg";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Profile() {
@@ -50,14 +49,14 @@ function Profile() {
   };
 
   return (
-    <div className={`container mt-4 ${styles.container}`}>
+    <div className={`pt-1 ${styles.container}`}>
       <div className="row">
         {/* Avatar Section */}
         <div className="col-md-2 text-center">
           <div className={styles.avatarContainer}>
             <img src={avatar} alt="Avatar" className={styles.avatar} />
             <label htmlFor="avatarUpload" className={styles.editIcon}>
-              <FaPencilAlt size={14} />
+              <i className={`fa-solid fa-pencil ${styles.smallIcon}`}></i>
             </label>
             <input type="file" id="avatarUpload" className="d-none" accept="image/*" onChange={handleAvatarChange} />
           </div>
@@ -66,17 +65,17 @@ function Profile() {
         {/* Left Form Section */}
         <div className="col-md-5">
           <form>
-            <div className="mb-3">
+            <div className="mb-3 me-4">
               <label htmlFor="name" className={styles.formLabel}>Your Name</label>
               <input type="text" className={`form-control ${styles.formControl}`} id="name" name="name" value={formData.name} onChange={handleChange} />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 me-4">
               <label htmlFor="email" className={styles.formLabel}>Email</label>
               <input type="email" className={`form-control ${styles.formControl}`} id="email" name="email" value={formData.email} onChange={handleChange} />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 me-4">
               <label htmlFor="dob" className={styles.formLabel}>Date of Birth</label>
               <input
                 type="date"
@@ -90,7 +89,7 @@ function Profile() {
               />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 me-4">
               <label htmlFor="permanentAddress" className={styles.formLabel}>Permanent Address</label>
               <input type="text" className={`form-control ${styles.formControl}`} id="permanentAddress" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
             </div>
@@ -100,22 +99,22 @@ function Profile() {
         {/* Right Form Section */}
         <div className="col-md-5">
           <form onSubmit={handleSubmit}>
-            <div className="mb-3">
+            <div className="mb-3  me-4">
               <label htmlFor="userName" className={styles.formLabel}>User Name</label>
               <input type="text" className={`form-control ${styles.formControl}`} id="userName" name="userName" value={formData.userName} onChange={handleChange} />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3  me-4">
               <label htmlFor="password" className={styles.formLabel}>Password</label>
               <input type="password" className={`form-control ${styles.formControl}`} id="password" name="password" value={formData.password} onChange={handleChange} />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 me-4">
               <label htmlFor="presentAddress" className={styles.formLabel}>Present Address</label>
               <input type="text" className={`form-control ${styles.formControl}`} id="presentAddress" name="presentAddress" value={formData.presentAddress} onChange={handleChange} />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 me-4">
               <label htmlFor="country" className={styles.formLabel}>Country</label>
               <input type="text" className={`form-control ${styles.formControl}`} id="country" name="country" value={formData.country} onChange={handleChange} />
             </div>
