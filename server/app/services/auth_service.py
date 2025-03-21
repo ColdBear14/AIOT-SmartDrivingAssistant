@@ -123,7 +123,7 @@ class AuthService:
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=True,
+            secure=True, # False to test api with postman
             samesite="None",
             path="/",
             max_age=3600
