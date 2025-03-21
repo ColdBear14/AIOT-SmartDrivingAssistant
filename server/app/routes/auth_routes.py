@@ -22,7 +22,10 @@ async def register(user: UserRequest):
         CustomLogger().get_logger().info(f"Register result: {result}")
 
         if result:
-            return JSONResponse(content={"message": "User created successfully"}, status_code=201)
+            return JSONResponse(
+                content={"message": "User created successfully"},
+                status_code=201
+            )
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -43,8 +46,11 @@ async def login(user: UserRequest, response: Response):
         CustomLogger().get_logger().info(f"Login result: {session_id} - {userid}")
 
         if session_id:
-            response = JSONResponse(content={"message": "Login successful"}, status_code=200)
-            response = AuthService()._create_cookie_with_session(response, session_id)
+            response = JSONResponse(
+                content={"message": "Login successful"},
+                status_code=200
+            )
+            response = AuthService()._add_cookie(response, session_id)
             
             return response
         else:
@@ -65,7 +71,10 @@ async def logout(request: Request, response: Response):
     try:
         result = AuthService()._del_session(session_id)
         if result:
-            response = JSONResponse(content={"message": "Logout successful"}, status_code=200)
+            response = JSONResponse(
+                content={"message": "Logout successful"},
+                status_code=200
+            )
             response.delete_cookie("session_id")  # Delete cookie from client
             return response
         else:

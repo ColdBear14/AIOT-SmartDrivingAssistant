@@ -38,8 +38,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # expiration_time = session_data.get("expiration_time")
 
         user = UserService()._get_user_info_by_session_id(session_id)
+        
         if not user:
-            return JSONResponse({"detail": "Unauthorized: Invalid or expired session token"}, status_code=401)
+            return JSONResponse(
+                content={"detail": "Unauthorized: Invalid or expired session token"},
+                status_code=401
+            )
 
         CustomLogger().get_logger().info(f"AuthMiddleware: User info: {user}")
 
@@ -48,22 +52,21 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Check session expiration
         if expiration_time.timestamp() - datetime.now().timestamp() < timedelta(minutes=10).total_seconds():
-            new_session_id = self._refresh_session(user_id, session_id)
+            CustomLogger().get_logger().info(f"AuthMiddleware: Refreshing session for user {user_id}")
+            new_session_id = AuthService()._create_session(user_id)
+
             if not new_session_id:
-                return JSONResponse({"detail": "Server Error: Unable to refresh session"}, status_code=500)
+                return JSONResponse(
+                    content={"detail": "Server Error: Unable to refresh session"},
+                    status_code=500
+                )
             
-            response = AuthService()._create_cookie_with_session(response, new_session_id)
+            response = await call_next(request)
+            response = AuthService()._add_cookie(response, new_session_id)
+            request.state.user_id = str(user_id)
+            return response
 
 
         # Attach user info to the request for further use
         request.state.user_id = str(user_id)
         return await call_next(request)
-    
-    def _refresh_session(self, user_id: object = None, session_id: str = None) -> str:
-        if not user_id or not session_id:
-            raise Exception("User ID and session ID are required")
-        
-        # redis_client.delete(session_id)
-        
-        new_session_id = AuthService()._create_session(user_id)
-        return new_session_id

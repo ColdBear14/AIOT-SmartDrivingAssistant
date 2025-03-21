@@ -3,6 +3,7 @@
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # from utils.custom_logger import CustomLogger
 
+from fastapi import Response
 from passlib.context import CryptContext
 import secrets
 
@@ -114,7 +115,7 @@ class AuthService:
         )
         return result.modified_count > 0
     
-    def _create_cookie_with_session(self, response, session_id: str = None) -> dict:
+    def _add_cookie(self, response, session_id: str = None) -> dict:
         '''
         Create a cookie with the session id and attach it to the response object.
         '''
@@ -127,3 +128,18 @@ class AuthService:
             max_age=3600
         )
         return response
+    
+    def _transfer_cookie(self, old_response: Response, new_response: Response) -> None:
+        '''
+        Transfer the session id from the old response to the new response.
+        '''
+        session_id = old_response.cookies.get("session_id")
+        if session_id:
+            new_response.set_cookie(
+                key="session_id",
+                value=session_id,
+                httponly=True,
+                secure=False,
+                samesite="lax",
+                max_age=3600
+            )
