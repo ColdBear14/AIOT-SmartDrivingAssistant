@@ -3,7 +3,7 @@ import os
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.custom_logger import CustomLogger
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
 
 import httpx
@@ -46,10 +46,18 @@ async def get_status():
     pass
 
 @router.get('/data')
-async def get_sensor_data(request: Request, sensor_request: SensorRequest):
+async def get_sensor_data(
+    request: Request,
+    sensor_type: str = Query(..., description="Sensor type. e.g. temperature(temp), humidity(hum)"),
+    amt: int = Query(..., description="Amount of data to retrieve")
+):
     uid = request.state.user_id
 
+    if not sensor_type or not amt:
+        raise HTTPException(status_code=400, detail="Invalid sensor request")
+
     try:
+        sensor_request = SensorRequest(sensor_type=sensor_type, amt=amt)
         data = IOTService()._get_sensor_data(uid, sensor_request)
         CustomLogger().get_logger().info(f"Sensor data: {data}")
 

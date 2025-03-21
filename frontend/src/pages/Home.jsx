@@ -30,8 +30,17 @@ const Home = () => {
     setLoading(true);
     setError(null);
     try {
-      axios.defaults.withCredentials = true;
-      const response = await axios.get('http://127.0.0.1:8000/iot/data');
+      const requestPayload = {
+        sensor_type: 'temp',
+        amt: 2
+      };
+
+      const response = await axios.get('http://127.0.0.1:8000/iot/all_data', 
+        {
+          withCredentials: true
+        }
+      );
+
       setSensorData(response.data);
       console.log("Dữ liệu tải về:", response.data);
     } catch (error) {

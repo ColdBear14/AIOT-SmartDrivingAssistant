@@ -53,7 +53,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         request.state.user_id = str(user_id)
 
         # Check session expiration
-        if expiration_time.timestamp() - datetime.now().timestamp() < timedelta(minutes=100).total_seconds():
+        if expiration_time.timestamp() - datetime.now().timestamp() < timedelta(minutes=10).total_seconds():
             CustomLogger().get_logger().info(f"AuthMiddleware: Refreshing session for user {user_id}")
             new_session_id = AuthService()._create_session(user_id)
 
