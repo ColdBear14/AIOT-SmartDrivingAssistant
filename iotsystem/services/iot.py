@@ -12,7 +12,7 @@ import serial.tools.list_ports
 class IOTSystem:
     _instance = None
 
-    __AIO_FEED_ID = ['led', 'pump']
+    __AIO_FEED_ID = ['led', 'fan']
 
     def __new__(cls, config=None):
         if not cls._instance:
@@ -104,7 +104,7 @@ class IOTSystem:
         # print("Received:", payload)
         CustomLogger().get_logger().info(f"Received: {payload}")
         if self.writer:
-            self.writer.write(f"{payload}#".encode())
+            self.writer.write(f"!{feed_id}:{payload}#".encode())
 
     @staticmethod
     def getPort():
@@ -140,10 +140,10 @@ class IOTSystem:
         CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
 
         sensor_map = {
-            "TEMP": "temp",
-            "HUMID": "humidity",
-            "LUX": "bright",
-            "DIS": "distance"
+            "temp": "temp",
+            "humid": "humidity",
+            "lux": "bright",
+            "dis": "distance"
         }
         if sensor_type in sensor_map:
             self.client.publish(sensor_map[sensor_type], value)
