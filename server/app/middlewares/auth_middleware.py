@@ -1,8 +1,8 @@
-# import os
-# import sys
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-import secrets
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.custom_logger import CustomLogger
+import secrets
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -50,8 +50,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         user_id = user["_id"]
         expiration_time = user["session_expiration"]
 
+        request.state.user_id = str(user_id)
+
         # Check session expiration
-        if expiration_time.timestamp() - datetime.now().timestamp() < timedelta(minutes=10).total_seconds():
+        if expiration_time.timestamp() - datetime.now().timestamp() < timedelta(minutes=100).total_seconds():
             CustomLogger().get_logger().info(f"AuthMiddleware: Refreshing session for user {user_id}")
             new_session_id = AuthService()._create_session(user_id)
 
@@ -63,10 +65,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
             
             response = await call_next(request)
             response = AuthService()._add_cookie(response, new_session_id)
-            request.state.user_id = str(user_id)
             return response
 
-
-        # Attach user info to the request for further use
-        request.state.user_id = str(user_id)
         return await call_next(request)

@@ -3,7 +3,7 @@
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # from utils.custom_logger import CustomLogger
 
-from fastapi import Response
+from bson import ObjectId
 from passlib.context import CryptContext
 import secrets
 
@@ -68,7 +68,7 @@ class AuthService:
         session_id = AuthService()._create_session(user['_id'])
         return (session_id, str(user['_id']))
     
-    def _create_session(self, uid: object = None) -> str:
+    def _create_session(self, uid: ObjectId = None) -> str:
         '''
         Create a new session for the user.
         Parameters: uid (ObjectId of user id)
@@ -123,24 +123,9 @@ class AuthService:
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="None",
             path="/",
             max_age=3600
         )
         return response
-    
-    def _transfer_cookie(self, old_response: Response, new_response: Response) -> None:
-        '''
-        Transfer the session id from the old response to the new response.
-        '''
-        session_id = old_response.cookies.get("session_id")
-        if session_id:
-            new_response.set_cookie(
-                key="session_id",
-                value=session_id,
-                httponly=True,
-                secure=False,
-                samesite="lax",
-                max_age=3600
-            )

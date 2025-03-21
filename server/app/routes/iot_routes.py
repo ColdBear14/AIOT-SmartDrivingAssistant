@@ -1,11 +1,15 @@
 import os
+# import sys
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from utils.custom_logger import CustomLogger
 
-from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 
 import httpx
 
-from services.sensor_service import SensorService
+from services.iot_service import IOTService
+from models.request import SensorRequest
 
 router = APIRouter()
 
@@ -42,18 +46,31 @@ async def get_status():
     pass
 
 @router.get('/data')
-async def get_sensor_data(request: Request):
+async def get_sensor_data(request: Request, sensor_request: SensorRequest):
     uid = request.state.user_id
 
     try:
-        data = SensorService()._get_sensor_data(uid, request)
+        data = IOTService()._get_sensor_data(uid, sensor_request)
+        CustomLogger().get_logger().info(f"Sensor data: {data}")
 
-        if data:
-            return JSONResponse(
-                content=data,
-                status_code=200
-            )
-        else:
-            raise HTTPException(status_code=404, detail="Data not found")
+        return JSONResponse(
+            content=data,
+            status_code=200
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
+@router.get('/all_data')
+async def get_all_sensor_data(request: Request):
+    uid = request.state.user_id
+
+    try:
+        data = IOTService()._get_all_sensors_data(uid)
+        CustomLogger().get_logger().info(f"Sensor data: {data}")
+
+        return JSONResponse(
+            content=data,
+            status_code=200
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -12,10 +12,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:9000"],  # Hoặc thay "*" bằng frontend URL, ví dụ: ["http://localhost:5500"]
+    allow_origins=["http://localhost:5173", "http://localhost:9000"],  # First one is app client, second one is iot-server
     allow_credentials=True,
-    allow_methods=["*"],  # Cho phép tất cả các phương thức (POST, GET, OPTIONS, ...)
-    allow_headers=["*"],  # Cho phép tất cả các headers
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 app.add_middleware(AuthMiddleware)
 
