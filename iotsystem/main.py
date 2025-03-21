@@ -1,5 +1,7 @@
 import sys
 import os
+
+from fastapi.responses import JSONResponse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.custom_logger import CustomLogger
 from iotsystem.services.iot import IOTSystem
@@ -20,15 +22,15 @@ app.add_middleware(
 async def start_system(uid_request: UserIdRequest):
     IOTSystem()._instance.start_system(uid_request.user_id)
     CustomLogger().get_logger().info("System turned ON")
-    return {"message": "System turned ON"}
+    return JSONResponse(content={"message": "System started successfully"}, status_code=200)
 
 @app.post("/stop_system")
 async def stop_system():
     IOTSystem()._instance.stop_system()
     CustomLogger().get_logger().info("System turned OFF")
-    return {"message": "System turned OFF"}
+    return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
 
 if __name__ == '__main__':
     import uvicorn
     CustomLogger().get_logger().info("App: __main__")
-    uvicorn.run(app, host='127.0.0.1', port=9000,reload=True)
+    uvicorn.run("iotsystem.main:app", host='127.0.0.1', port=9000,reload=True)

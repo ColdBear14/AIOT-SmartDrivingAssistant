@@ -28,7 +28,7 @@ if __name__ == '__main__':
     from routes.user_routes import router as user_router
     app.include_router(user_router, prefix='/user')
 
-    from routes.sensor_routes import router as sensor_router
+    from routes.iot_routes import router as sensor_router
     app.include_router(sensor_router, prefix='/sensor')
 
     import uvicorn
