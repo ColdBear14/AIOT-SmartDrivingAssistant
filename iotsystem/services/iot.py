@@ -124,7 +124,8 @@ class IOTSystem:
         while self.running:
             try:
                 data = await self.reader.readuntil(b"#")
-                data = data.decode("UTF-8").strip("!#")
+                data = data.decode("UTF-8").replace("#", "").replace("!", "")
+                CustomLogger().get_logger().info(f"Received data: {data}")
                 await self.processData(data, str(uid))
             except Exception as e:
                 # print(f"Serial read error: {e}")
@@ -133,6 +134,7 @@ class IOTSystem:
 
     async def processData(self, data, uid):
         """Processes incoming serial data and stores it in DB."""
+        CustomLogger().get_logger().info(f"Processing data: {data}")
         splitData = data.split(":")
         if len(splitData) < 2:
             return

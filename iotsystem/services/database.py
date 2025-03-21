@@ -43,7 +43,7 @@ class Database:
         if collection_name is None or document is None:
             return None
         
-        document['timestamp'] = datetime.now().isoformat()
+        document['timestamp'] = datetime.now()
 
         result = self.db[collection_name].insert_one(document)
 

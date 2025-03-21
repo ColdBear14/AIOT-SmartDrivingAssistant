@@ -9,17 +9,17 @@ import { UserContext } from '../hooks/UserContext.jsx';
 
 const Home = () => {
   const [data, setData] = useState({
-    distance: 120, // cm
-    temperature: 28, // Celsius
-    humidity: 65, // Percentage
-    lightLevel: 75, // Percentage
-    incline: 2, // Degrees
+    distance: 0, // cm
+    temperature: 0, // Celsius
+    humidity: 0, // Percentage
+    lightLevel: 0, // Percentage
+    incline: 0, // Degrees
     headlightsMode: "Auto", // Auto, Manual, Off
-    headlightsBrightness: 2, // 1-4 (Dim, Low, Medium, High)
+    headlightsBrightness: 0, // 1-4 (Dim, Low, Medium, High)
     driverStatus: "Alert", // Alert, Tired, Distracted
     airConditioner: {
       status: "Auto",
-      temperature: 22,
+      temperature: 0,
     }
   });
   // Tích hợp APT
@@ -48,22 +48,23 @@ const Home = () => {
       });
 
       // Xử lý dữ liệu từ API và cập nhật state
-      const sensorList = response.data;
-      const newData = { ...data };
+      const sensorList = response.data.slice(0, 10);
+      const newData = {};
 
       sensorList.forEach(sensor => {
-        const value = parseFloat(sensor.val);
-        switch(sensor.metadata.sensor_type) {
-          case 'distance':
+        const value = parseFloat(sensor.value);
+        console.log("sensor.type: ", sensor.sensor_type, "value: ", value);
+        switch(sensor.sensor_type) {
+          case ' !dis':
             newData.distance = value;
             break;
-          case 'temp':
+          case ' !temp':
             newData.temperature = value;
             break;
-          case 'humidity':
+          case 'humid':
             newData.humidity = value;
             break;
-          case 'lux':
+          case ' !lux':
             newData.lightLevel = value;
             break;
           case 'incline':
@@ -74,9 +75,11 @@ const Home = () => {
         }
       });
 
-      setData(newData);
       setSensorData(sensorList);
       console.log("Dữ liệu tải về:", sensorList);
+
+      setData(newData);
+      console.log("asdfsaglkcjvlxkjcvlkjxjvx: ", data);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -113,18 +116,18 @@ const Home = () => {
             <h4 className="mb-2">Air conditioning</h4>
             <div className='mb-2'>
               <p className='mb-1 small text-body-tertiary'>Temperature</p>
-              <p className="fw-bold fs-2 mb-1">{data.temperature.toFixed(1)}°C</p>
+              <p className="fw-bold fs-2 mb-1">{data.temperature?.toFixed(1)}°C</p>
             </div>
             <div className='mb-2'>
               <p className='mb-1 small text-body-tertiary'>Humidity</p>
-              <p className="fw-bold fs-2 mb-1">{data.humidity.toFixed(1)}%</p>
+              <p className="fw-bold fs-2 mb-1">{data.humidity?.toFixed(1)}%</p>
             </div>
             <div className='mb-2'>
               <p className='mb-2 small text-body-tertiary'>Air conditioning</p>
               <div className='d-flex flex-wrap'>
-                <button className={`rounded btn text-white ${data.airConditioner.status === 'Auto' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Auto</button>
-                <button className={`rounded btn text-white ${data.airConditioner.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
-                <button className={`rounded btn text-white ${data.airConditioner.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
+                <button className={`rounded btn text-white ${data.airConditioner?.status === 'Auto' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Auto</button>
+                <button className={`rounded btn text-white ${data.airConditioner?.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
+                <button className={`rounded btn text-white ${data.airConditioner?.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
               </div>
             </div>
           </div>
@@ -157,7 +160,7 @@ const Home = () => {
               <ul className="ms-3 list-unstyled mb-0">
                 {sensorData && sensorData.slice(0, 3).map((sensor, index) => (
                   <li key={index} className="text-muted mb-1">
-                    {new Date(sensor.timestamp.$date).toLocaleTimeString()} - {sensor.metadata.sensor_type}: {sensor.val}
+                    {new Date(sensor.timestamp.$date).toLocaleTimeString()} - {sensor.sensor_type}: {sensor.value}
                   </li>
                 ))}
               </ul>
@@ -182,7 +185,7 @@ const Home = () => {
           </div>
           <div className="p-4 mb-3 shadow bg-white rounded">
             <h4 className="mb-1">Slope Detection</h4>
-            <p className="fw-bold fs-2 mb-1">{data.incline.toFixed(1)}°</p>
+            <p className="fw-bold fs-2 mb-1">{data.incline?.toFixed(1)}°</p>
             <p className='mb-0 small text-body-tertiary'>Flat terrain</p>
           </div>
         </div>

@@ -31,7 +31,9 @@ class IOTService:
         """
         # Query updated to access nested 'uid' field in 'metadata'
         data = Database()._instance.get_sensor_collection().find(
-            {self.FIELD_UID: uid}
+            {self.FIELD_UID: uid},
+            sort=[(self.FIELD_TIMESTAMP, -1)],
+            limit=50
         )
         data = list(data)
         for doc in data:
