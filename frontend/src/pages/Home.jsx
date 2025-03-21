@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useContext } from 'react';
 import { UserContext } from '../hooks/UserContext.jsx';
 
+
+
 const Home = () => {
   const [data, setData] = useState({
     distance: 120, // cm
@@ -23,26 +25,58 @@ const Home = () => {
   // Tích hợp APT
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const { sessionId, sensorData, setSensorData } = useContext(UserContext);
 
   const handleGetData = async () => {
     setLoading(true);
     setError(null);
+    // try {
+    //   const requestPayload = {
+    //     sensor_type: 'temp',
+    //     amt: 2
+    //   };
+
+    //   const response = await axios.get('http://127.0.0.1:8000/iot/all_data', 
+    //     {
+    //       withCredentials: true
+    //     }
+    //   );
+
     try {
-      const requestPayload = {
-        sensor_type: 'temp',
-        amt: 2
-      };
+      const response = await axios.get('http://127.0.0.1:8000/iot/all_data', {
+        withCredentials: true
+      });
 
-      const response = await axios.get('http://127.0.0.1:8000/iot/all_data', 
-        {
-          withCredentials: true
+      // Xử lý dữ liệu từ API và cập nhật state
+      const sensorList = response.data;
+      const newData = { ...data };
+
+      sensorList.forEach(sensor => {
+        const value = parseFloat(sensor.val);
+        switch(sensor.metadata.sensor_type) {
+          case 'distance':
+            newData.distance = value;
+            break;
+          case 'temp':
+            newData.temperature = value;
+            break;
+          case 'humidity':
+            newData.humidity = value;
+            break;
+          case 'lux':
+            newData.lightLevel = value;
+            break;
+          case 'incline':
+            newData.incline = value;
+            break;
+          default:
+            break;
         }
-      );
+      });
 
-      setSensorData(response.data);
-      console.log("Dữ liệu tải về:", response.data);
+      setData(newData);
+      setSensorData(sensorList);
+      console.log("Dữ liệu tải về:", sensorList);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -50,74 +84,61 @@ const Home = () => {
     }
   }
 
-  // simulate real-time updates
   useEffect(() => {
+    handleGetData();
+    
     const interval = setInterval(() => {
       handleGetData();
-
-      setData(prevData => ({
-        ...prevData,
-        distance: Math.max(20, prevData.distance + Math.floor(Math.random() * 11) - 5),
-        temperature: Math.max(0, Math.min(40, prevData.temperature + (Math.random() - 0.5))),
-        humidity: Math.max(30, Math.min(90, prevData.humidity + (Math.random() - 0.5) * 2)),
-        headlightsBrightness: Math.max(0, Math.min(100, prevData.lightLevel + (Math.random() - 0.5) * 5)),
-        incline: Math.max(-10, Math.min(10, prevData.incline + (Math.random() - 0.5))),
-      }));
     }, 2000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // Distance warning indicator
-  const getDistanceWarning = () => {
-    if (data.distance < 50) return { class: "bg-danger", message: "Danger" };
-    if (data.distance < 100) return { class: "bg-warning", message: "Warning" };
+  // Define the function to determine distance warning
+  const getDistanceWarning = (distance) => {
+    if (distance < 50) return { class: "bg-danger", message: "Danger" };
+    if (distance < 100) return { class: "bg-warning", message: "Warning" };
     return { class: "bg-success", message: "Safe" };
   };
 
-  const distanceWarning = getDistanceWarning();
+  // Compute the warning dynamically based on the current distance
+  const distanceWarning = getDistanceWarning(data.distance);
 
 
   return (
     <>
-
       <div className='row'>
-        {/* Distance Sensor Panel */}
         <div className="col-md mb-3">
           <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
             <h4 className="mb-2">Air conditioning</h4>
             <div className='mb-2'>
               <p className='mb-1 small text-body-tertiary'>Temperature</p>
-              {/* variable temperature */}
               <p className="fw-bold fs-2 mb-1">{data.temperature.toFixed(1)}°C</p>
             </div>
             <div className='mb-2'>
               <p className='mb-1 small text-body-tertiary'>Humidity</p>
-              {/* variable humidity */}
-              <p className="fw-bold fs-2 mb-1">{data.humidity.toFixed(1)}</p>
+              <p className="fw-bold fs-2 mb-1">{data.humidity.toFixed(1)}%</p>
             </div>
             <div className='mb-2'>
               <p className='mb-2 small text-body-tertiary'>Air conditioning</p>
-              {/* variable air conditioning */}
               <div className='d-flex flex-wrap'>
-                {/* variable warning */}
-                <button className={`rounded btn text-white bg-primary me-2 mb-2 px-3 py-1`}>Auto</button>
-                <button className={`rounded btn text-white bg-secondary me-2 mb-2 px-3 py-1`}>Manual</button>
-                <button className={`rounded btn mb-2 text-white bg-secondary px-3 py-1`}>Off</button>
+                <button className={`rounded btn text-white ${data.airConditioner.status === 'Auto' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Auto</button>
+                <button className={`rounded btn text-white ${data.airConditioner.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
+                <button className={`rounded btn text-white ${data.airConditioner.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
               </div>
             </div>
           </div>
         </div>
+        
         <div className="col-md mb-3">
           <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
             <h4 className="mb-2">Driver monitoring</h4>
             <div className='mb-2 d-flex align-items-center'>
               <div className="rounded-circle me-2 bg-success" style={{ width: '16px', height: '16px' }}></div>
-              <p className='mb-0 fw-bold fs-4'>Conscious</p>
+              <p className='mb-0 fw-bold fs-4'>{data.driverStatus}</p>
             </div>
             <div className='mb-2'>
               <p className='mb-1 small text-body-tertiary'>Sleepiness detection sensitivity</p>
-              {/* variable humidity */}
               <div className='d-flex align-items-center'>
                 <span className='me-2 small'>Low</span>
                 <input
@@ -134,22 +155,25 @@ const Home = () => {
             <div className='mb-2 bg-light rounded small'>
               <p className='fw-medium mb-1 mt-3'>Recent announcements:</p>
               <ul className="ms-3 list-unstyled mb-0">
-                <li className="text-success mb-1">✓ Sober driver</li>
-                <li className="text-muted mb-1">14:30 - Detect signs of fatigue</li>
-                <li className="text-muted">12:15 - Distraction Detection</li>
+                {sensorData && sensorData.slice(0, 3).map((sensor, index) => (
+                  <li key={index} className="text-muted mb-1">
+                    {new Date(sensor.timestamp.$date).toLocaleTimeString()} - {sensor.metadata.sensor_type}: {sensor.val}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
         </div>
+
         <div className="col-md col-md-4 mb-3">
           <div className="p-4 mb-3 shadow bg-white rounded">
             <h4 className="mb-1">Distance Sensor</h4>
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                {/* variable distance */}
                 <p className="fw-bold fs-2 mb-1">{data.distance} cm</p>
-                {/* variable warning */}
-                <button disabled className={`rounded btn text-white bg-success px-3 py-1 ${distanceWarning.class}`}>{distanceWarning.message}</button>
+                <button disabled className={`rounded btn text-white ${distanceWarning.class} px-3 py-1`}>
+                  {distanceWarning.message}
+                </button>
               </div>
               <div className={`${styles.distanceSensorIcon} rounded-5`}>
                 <i className="fa-solid fa-bolt"></i>
@@ -158,12 +182,12 @@ const Home = () => {
           </div>
           <div className="p-4 mb-3 shadow bg-white rounded">
             <h4 className="mb-1">Slope Detection</h4>
-            {/* variable Slope */}
             <p className="fw-bold fs-2 mb-1">{data.incline.toFixed(1)}°</p>
             <p className='mb-0 small text-body-tertiary'>Flat terrain</p>
           </div>
         </div>
       </div>
+
       <div className='row'>
         <div className='col-md col-md-6 mb-3'>
           <div className="p-4 shadow bg-white rounded">
@@ -173,7 +197,6 @@ const Home = () => {
               <div className="progress">
                 <div className="progress-bar bg-primary"
                   role="progressbar"
-                  // variable ambient light intensity
                   style={{ width: `${data.lightLevel}%` }}
                   aria-valuemin="0"
                   aria-valuemax="100"></div>
@@ -181,12 +204,10 @@ const Home = () => {
               <p className="mt-1 mb-0 text-end small">{data.lightLevel}%</p>
               <div className='mt-1'>
                 <p className='mb-2 small text-body-tertiary'>Headlight mode</p>
-                {/* variable air conditioning */}
                 <div className='d-flex flex-wrap'>
-                  {/* variable warning */}
-                  <button className={`rounded btn text-white bg-primary me-2 mb-2 px-3 py-1`}>Auto</button>
-                  <button className={`rounded btn text-white bg-secondary me-2 mb-2 px-3 py-1`}>Manual</button>
-                  <button className={`rounded btn mb-2 text-white bg-secondary px-3 py-1`}>Off</button>
+                  <button className={`rounded btn text-white ${data.headlightsMode === 'Auto' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Auto</button>
+                  <button className={`rounded btn text-white ${data.headlightsMode === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
+                  <button className={`rounded btn text-white ${data.headlightsMode === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
                 </div>
               </div>
             </div>
