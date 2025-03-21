@@ -12,7 +12,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Hoặc thay "*" bằng frontend URL, ví dụ: ["http://localhost:5500"]
+    allow_origins=["http://localhost:5173", "http://localhost:9000"],  # Hoặc thay "*" bằng frontend URL, ví dụ: ["http://localhost:5500"]
     allow_credentials=True,
     allow_methods=["*"],  # Cho phép tất cả các phương thức (POST, GET, OPTIONS, ...)
     allow_headers=["*"],  # Cho phép tất cả các headers
@@ -28,8 +28,8 @@ if __name__ == '__main__':
     from routes.user_routes import router as user_router
     app.include_router(user_router, prefix='/user')
 
-    from routes.iot_routes import router as sensor_router
-    app.include_router(sensor_router, prefix='/sensor')
+    from routes.iot_routes import router as iot_router
+    app.include_router(iot_router, prefix='/iot')
 
     import uvicorn
     uvicorn.run(app, host='127.0.0.1', port=8000)

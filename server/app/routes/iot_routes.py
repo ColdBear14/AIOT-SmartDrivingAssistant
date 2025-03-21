@@ -41,7 +41,7 @@ async def turn_off(request: Request):
 async def get_status():
     pass
 
-@router.get('/')
+@router.get('/data')
 async def get_sensor_data(request: Request):
     uid = request.state.user_id
 

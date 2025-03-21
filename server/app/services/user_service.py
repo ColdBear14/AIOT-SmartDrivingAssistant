@@ -17,6 +17,7 @@ class UserService:
 
     def _get_user_info(self, uid: str = None) -> dict:
         user = Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
+        user.pop('_id', None)
         return user
     
     def _update_user_info(self, uid: str = None, user_info_request: UserInfoRequest = None):

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../components/Home/Home.module.css'
 
+import axios from 'axios';
+import { useContext } from 'react';
+import { UserContext } from '../hooks/UserContext.jsx';
+
 const Home = () => {
   const [data, setData] = useState({
     distance: 120, // cm
@@ -20,9 +24,28 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const { sessionId, sensorData, setSensorData } = useContext(UserContext);
+
+  const handleGetData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      axios.defaults.withCredentials = true;
+      const response = await axios.get('http://127.0.0.1:8000/iot/data');
+      setSensorData(response.data);
+      console.log("Dữ liệu tải về:", response.data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // simulate real-time updates
   useEffect(() => {
     const interval = setInterval(() => {
+      handleGetData();
+
       setData(prevData => ({
         ...prevData,
         distance: Math.max(20, prevData.distance + Math.floor(Math.random() * 11) - 5),

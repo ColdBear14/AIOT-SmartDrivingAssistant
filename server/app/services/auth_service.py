@@ -123,8 +123,9 @@ class AuthService:
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="None",
+            path="/",
             max_age=3600
         )
         return response

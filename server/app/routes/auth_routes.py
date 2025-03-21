@@ -17,7 +17,6 @@ async def register(user: UserRequest):
         raise HTTPException(status_code=400, detail="Invalid request")
     
     try:
-        CustomLogger().get_logger().info(f"Register request for user: {user.username}")
         result = AuthService()._register(user)
         CustomLogger().get_logger().info(f"Register result: {result}")
 
@@ -41,7 +40,6 @@ async def login(user: UserRequest, response: Response):
         raise HTTPException(status_code=400, detail="Invalid request")
 
     try:
-        CustomLogger().get_logger().info(f"Login request for user: {user.username}")
         session_id, userid = AuthService()._authenticate(user)
         CustomLogger().get_logger().info(f"Login result: {session_id} - {userid}")
 

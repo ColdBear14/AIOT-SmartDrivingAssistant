@@ -4,10 +4,8 @@ import styles from "../components/Home/Profile.module.css"; // Import CSS module
 import defaultAvatar from "../assets/images/avt.jpg";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-
-
-"API here open the door"
-const API_URL = ""; 
+import { useContext } from "react";
+import { UserContext } from "../hooks/UserContext.jsx";
 
 const mockData = {
   name: "Charlene Reed",
@@ -21,20 +19,24 @@ const mockData = {
 };
 
 function Profile() {
+  const { sessionId, user, setUser } = useContext(UserContext);
+
   const [formData, setFormData] = useState(mockData);
   const [avatar, setAvatar] = useState(defaultAvatar);
 
   // Call API
   useEffect(() => {
-    if (API_URL) {
-      axios.get(API_URL)
-        .then((response) => {
-          setFormData(response.data);
-        })
-        .catch((error) => {
-          console.error("Lỗi khi tải dữ liệu:", error);
-        });
-    }
+    axios.defaults.withCredentials = true;
+    axios.get("http://127.0.0.1:8000/user/infor")
+      .then((response) => {
+        console.log("Dữ liệu tải về:", response.data);
+        setUserData(response.data);
+
+        // setFormData(response.data);
+      })
+      .catch((error) => {
+        console.error("Lỗi khi tải dữ liệu:", error);
+      });
   }, []);
 
   const handleChange = (e) => {
@@ -67,14 +69,10 @@ function Profile() {
     e.preventDefault();
 
     try {
-      if (API_URL) {
-        const response = await axios.post(API_URL, formData);
-        console.log("Dữ liệu gửi đi:", response.data);
-        alert("Profile saved successfully! (Check console)");
-      } else {
-        console.log("Mock data gửi đi:", formData);
-        alert("Lưu profile thành công (Mock mode)");
-      }
+      const response = await axios.put("http://127.0.0.1:8000/user/infor", formData);
+      console.log("Dữ liệu gửi đi:", response.data);
+      setUser(response.data);
+      alert("Profile saved successfully! (Check console)");
     } catch (error) {
       console.error("Lỗi khi gửi dữ liệu:", error);
       alert("Có lỗi xảy ra khi lưu dữ liệu.");

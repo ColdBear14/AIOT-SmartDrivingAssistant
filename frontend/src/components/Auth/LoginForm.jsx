@@ -1,8 +1,14 @@
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+
+import { UserContext } from '../../hooks/UserContext.jsx';
+
+import Cookies from 'js-cookie';
 
 function LoginForm({ showSignUp }) {
   const navigate = useNavigate();
+  const { setSessionId } = useContext(UserContext);
 
   const handleLogin = (e) => {
     e.preventDefault(); // Ngăn form submit mặc định
@@ -21,9 +27,16 @@ function LoginForm({ showSignUp }) {
       password: password
     }
 
+    axios.defaults.withCredentials = true;
+    
     axios.patch('http://127.0.0.1:8000/auth/login', request)
       .then(response => {
         if (response.status === 200) {
+          const session_id = Cookies.get('session_id');
+          if (session_id) {
+            setSessionId(session_id);
+          }
+          console.log(`Login successful with response: ${response} and session_id: ${session_id}`);
           navigate('/home');
         } else {
           alert('Login failed');
@@ -33,7 +46,6 @@ function LoginForm({ showSignUp }) {
         console.error('Error:', error);
         alert('An error occurred during login');
       });
-
   };
 
   return (

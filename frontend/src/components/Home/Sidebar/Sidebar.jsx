@@ -3,7 +3,27 @@ import { NavLink } from "react-router-dom"
 import clsx from "clsx"
 import Robot from '../../../assets/robot.svg'
 
+import axios from "axios"
+import { useContext } from "react"
+import { UserContext } from "../../../hooks/UserContext.jsx"
+
 const SideBar = () => {
+  // handleLogout = () => {
+  //   try {
+  //     axios.patch('http://127.0.0.1:8000/auth/logout')
+  //     .then(response => {
+  //       if (response.status === 200) {
+  //         console.log('Logout successful');
+  //       } else {
+  //         console.log('Logout failed');
+  //       }
+  //     })
+  //   }
+  //   catch (error) {
+  //     console.log(error)
+  //   }
+  // }
+
   return (
     <nav className={styles.wrapper}>
       <div className={styles.logo}>
