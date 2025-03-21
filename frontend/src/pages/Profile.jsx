@@ -30,7 +30,7 @@ function Profile() {
     axios.get("http://127.0.0.1:8000/user/infor")
       .then((response) => {
         console.log("Dữ liệu tải về:", response.data);
-        setUserData(response.data);
+        setUser(response.data);
 
         // setFormData(response.data);
       })
