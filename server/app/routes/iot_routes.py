@@ -75,7 +75,10 @@ async def get_all_sensor_data(request: Request):
     try:
         data = IOTService()._get_all_sensors_data(uid)
         CustomLogger().get_logger().info(f"Sensor data: {data}")
-
+        for sensor_data in data:
+            if 'timestamp' in sensor_data:
+                sensor_data['timestamp'] = sensor_data['timestamp'].isoformat()
+            
         return JSONResponse(
             content=data,
             status_code=200

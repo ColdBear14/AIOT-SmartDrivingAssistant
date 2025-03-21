@@ -2,9 +2,8 @@ from services.database import Database
 from models.request import SensorRequest
 
 class IOTService:
-    FIELD_METADATA = "metadata"
-    FIELD_UID = "metadata.uid"
-    FIELD_SENSOR_TYPE = "metadata.sensor_type"
+    FIELD_UID = "uid"
+    FIELD_SENSOR_TYPE = "sensor_type"
     FIELD_TIMESTAMP = "timestamp"
     FIELD_VAL = "val"
 
@@ -34,4 +33,8 @@ class IOTService:
         data = Database()._instance.get_sensor_collection().find(
             {self.FIELD_UID: uid}
         )
+        data = list(data)
+        for doc in data:
+            doc["_id"] = str(doc["_id"])
+
         return list(data)  # Convert cursor to list for easier handling

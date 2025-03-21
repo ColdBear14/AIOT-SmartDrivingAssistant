@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -124,7 +125,7 @@ class IOTSystem:
             try:
                 data = await self.reader.readuntil(b"#")
                 data = data.decode("UTF-8").strip("!#")
-                await self.processData(data, uid)
+                await self.processData(data, str(uid))
             except Exception as e:
                 # print(f"Serial read error: {e}")
                 CustomLogger().get_logger().exception(f"Serial read error: {e}")
@@ -140,7 +141,7 @@ class IOTSystem:
         CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
 
         sensor_map = {
-            "temp": "temp",
+            "temp": "temperature",
             "humid": "humidity",
             "lux": "bright",
             "dis": "distance"
@@ -149,13 +150,13 @@ class IOTSystem:
             self.client.publish(sensor_map[sensor_type], value)
 
         try:
-            doc = {
-                'uid': uid,
+            doc: dict = {
+                'uid': str(uid),
                 'sensor_type': sensor_type.lower(), 
-                'value': float(value),
-                'timestamp': asyncio.get_event_loop().time()
+                'value': float(value)
             }
-            await self.db.push_to_db('environment_sensor', doc)
+
+            Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
         except ValueError:
             # print(f"Invalid data format: {sensor_type} -> {value}")
             CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")

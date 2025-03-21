@@ -29,11 +29,13 @@ class Database:
             CustomLogger().get_logger().info("Database's config: " + str(config))
 
         self.client = MongoClient(config["mongo_url"])
+        CustomLogger().get_logger().info(f"Database: Connected with client {self.client}.")
         if test_mode:
             CustomLogger().get_logger().info("Database: Test mode.")
             self.db = self.client['test']
         else:
             self.db = self.client[config["db_name"]]
+            CustomLogger().get_logger().info(f"Database: Connected with database {self.db}.")
         self.collections = set()
 
     def _add_doc_with_timestamp(self, collection_name=None, document=None):
@@ -41,13 +43,16 @@ class Database:
         if collection_name is None or document is None:
             return None
         
-        document['timestamp'] = datetime.now()
+        document['timestamp'] = datetime.now().isoformat()
 
         result = self.db[collection_name].insert_one(document)
 
         CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
+    def push_to_database(self, collection_name, document):
+        pass
+
 # User region
     def get_user_collection(self):
         return self.db.get_collection('user')

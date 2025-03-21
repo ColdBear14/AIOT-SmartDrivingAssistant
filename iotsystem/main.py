@@ -20,13 +20,13 @@ app.add_middleware(
 )
 @app.post("/start_system")
 async def start_system(uid_request: UserIdRequest):
-    IOTSystem()._instance.start_system(uid_request.user_id)
+    await IOTSystem()._instance.start_system(uid_request.user_id)
     CustomLogger().get_logger().info("System turned ON")
     return JSONResponse(content={"message": "System started successfully"}, status_code=200)
 
 @app.post("/stop_system")
 async def stop_system():
-    IOTSystem()._instance.stop_system()
+    await IOTSystem()._instance.stop_system()
     CustomLogger().get_logger().info("System turned OFF")
     return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
 
