@@ -1,21 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import styles from "../components/Home/Profile.module.css"; // Import CSS module
 import defaultAvatar from "../assets/images/avt.jpg";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function Profile() {
-  const [formData, setFormData] = useState({
-    name: "Charlene Reed",
-    email: "charlenereed@gmail.com",
-    dob: "1990-01-25",
-    permanentAddress: "San Jose, California, USA",
-    userName: "Charlene Reed",
-    password: "********",
-    presentAddress: "San Jose, California, USA",
-    country: "USA",
-  });
 
+
+"API here open the door"
+const API_URL = ""; 
+
+const mockData = {
+  name: "Charlene Reed",
+  email: "charlenereed@gmail.com",
+  dob: "1990-01-25",
+  permanentAddress: "San Jose, California, USA",
+  userName: "Charlene Reed",
+  password: "********",
+  presentAddress: "San Jose, California, USA",
+  country: "USA",
+};
+
+function Profile() {
+  const [formData, setFormData] = useState(mockData);
   const [avatar, setAvatar] = useState(defaultAvatar);
+
+  // Call API
+  useEffect(() => {
+    if (API_URL) {
+      axios.get(API_URL)
+        .then((response) => {
+          setFormData(response.data);
+        })
+        .catch((error) => {
+          console.error("Lỗi khi tải dữ liệu:", error);
+        });
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,7 +50,8 @@ function Profile() {
         return;
       }
     }
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAvatarChange = (e) => {
@@ -42,10 +63,22 @@ function Profile() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Data sent to backend:", formData);
-    alert("Profile saved successfully! (Check console)");
+
+    try {
+      if (API_URL) {
+        const response = await axios.post(API_URL, formData);
+        console.log("Dữ liệu gửi đi:", response.data);
+        alert("Profile saved successfully! (Check console)");
+      } else {
+        console.log("Mock data gửi đi:", formData);
+        alert("Lưu profile thành công (Mock mode)");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi dữ liệu:", error);
+      alert("Có lỗi xảy ra khi lưu dữ liệu.");
+    }
   };
 
   return (
@@ -77,16 +110,7 @@ function Profile() {
 
             <div className="mb-3 me-4">
               <label htmlFor="dob" className={styles.formLabel}>Date of Birth</label>
-              <input
-                type="date"
-                className={`form-control ${styles.formControl}`}
-                id="dob"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                pattern="\d{4}-\d{2}-\d{2}" /* Hỗ trợ nhập tay theo định dạng YYYY-MM-DD */
-                placeholder="YYYY-MM-DD"
-              />
+              <input type="date" className={`form-control ${styles.formControl}`} id="dob" name="dob" value={formData.dob} onChange={handleChange} />
             </div>
 
             <div className="mb-3 me-4">
@@ -99,12 +123,12 @@ function Profile() {
         {/* Right Form Section */}
         <div className="col-md-5">
           <form onSubmit={handleSubmit}>
-            <div className="mb-3  me-4">
+            <div className="mb-3 me-4">
               <label htmlFor="userName" className={styles.formLabel}>User Name</label>
               <input type="text" className={`form-control ${styles.formControl}`} id="userName" name="userName" value={formData.userName} onChange={handleChange} />
             </div>
 
-            <div className="mb-3  me-4">
+            <div className="mb-3 me-4">
               <label htmlFor="password" className={styles.formLabel}>Password</label>
               <input type="password" className={`form-control ${styles.formControl}`} id="password" name="password" value={formData.password} onChange={handleChange} />
             </div>
