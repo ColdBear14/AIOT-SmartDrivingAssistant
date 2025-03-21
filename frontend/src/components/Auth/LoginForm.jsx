@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function LoginForm({ showSignUp }) {
   const navigate = useNavigate();
@@ -7,13 +8,32 @@ function LoginForm({ showSignUp }) {
     e.preventDefault(); // Ngăn form submit mặc định
     navigate('/home'); // Chuyển hướng sang Home
     // Giả lập logic đăng nhập (bạn có thể thêm gọi API ở đây)
-    // const username = document.getElementById('username_log').value;
-    // const password = document.getElementById('password_log').value;
+    const username = document.getElementById('username_log').value;
+    const password = document.getElementById('password_log').value;
     
     if (username && password) {
     } else {
       alert('Please enter username and password');
     }
+
+    const request = {
+      username: username,
+      password: password
+    }
+
+    axios.patch('http://127.0.0.1:8000/auth/login', request)
+      .then(response => {
+        if (response.status === 200) {
+          navigate('/home');
+        } else {
+          alert('Login failed');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during login');
+      });
+
   };
 
   return (
