@@ -21,6 +21,7 @@ async def turn_on(request: Request):
         iot_servet_port = os.getenv("IOT_SERVER_PORT")
 
         response = await client.post(f"{iot_server_url}:{iot_servet_port}/start_system", json={"user_id": uid})
+        CustomLogger().get_logger().info(f"Turn On IOT-system response: {response}")
 
         if response.status_code == 200:
             return JSONResponse(content={"message": "System started successfully"}, status_code=200)
@@ -35,6 +36,7 @@ async def turn_off(request: Request):
         iot_servet_port = os.getenv("IOT_SERVER_PORT")
 
         response = await client.post(f"{iot_server_url}:{iot_servet_port}/stop_system")
+        CustomLogger().get_logger().info(f"Turn Off IOT-system response: {response}")
 
         if response.status_code == 200:
             return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
@@ -59,7 +61,7 @@ async def get_sensor_data(
     try:
         sensor_request = SensorRequest(sensor_type=sensor_type, amt=amt)
         data = IOTService()._get_sensor_data(uid, sensor_request)
-        CustomLogger().get_logger().info(f"Sensor data: {data}")
+        CustomLogger().get_logger().info(f"Request data for {sensor_type} : {amt} get {data.count()} response data.")
 
         return JSONResponse(
             content=data,
@@ -74,7 +76,7 @@ async def get_all_sensor_data(request: Request):
 
     try:
         data = IOTService()._get_all_sensors_data(uid)
-        CustomLogger().get_logger().info(f"Sensor data: {data}")
+        CustomLogger().get_logger().info(f"Request all_data get {data.count()} response data.")
         for sensor_data in data:
             if 'timestamp' in sensor_data:
                 sensor_data['timestamp'] = sensor_data['timestamp'].isoformat()

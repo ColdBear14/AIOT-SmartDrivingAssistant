@@ -1,6 +1,8 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add the root path to the sys.path to import the modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
+
 from utils.custom_logger import CustomLogger
 
 from fastapi import FastAPI

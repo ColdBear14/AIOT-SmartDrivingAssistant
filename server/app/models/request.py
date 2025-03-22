@@ -7,9 +7,9 @@ class UserRequest(BaseModel):
 
 class UserInfoRequest(BaseModel):
     name: str
-    email: str
-    phone: str
-    address: str
+    email: str = Field(..., email=True)
+    phone: str = Field(...,min_length=10,max_length=10, pattern="^[0-9]*$")
+    address: str = Field(...,max_length=100)
     
 class SensorRequest(BaseModel):
     sensor_type: Literal["temp","humid","lux","dist"]

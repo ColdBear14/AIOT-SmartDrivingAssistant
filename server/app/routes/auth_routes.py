@@ -68,6 +68,7 @@ async def logout(request: Request, response: Response):
 
     try:
         result = AuthService()._del_session(session_id)
+        CustomLogger().get_logger().info(f"Logout result: {result}")
         if result:
             response = JSONResponse(
                 content={"message": "Logout successful"},

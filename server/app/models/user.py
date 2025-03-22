@@ -1,42 +1,51 @@
-from passlib.context import CryptContext
-from fastapi import HTTPException
-import secrets
-
 class User:
-    __pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-    
-    FIELD_USERNAME = 'username'
-    FIELD_PASSWORD = 'password'
-    FIELD_SESSION = 'session_id'
-    def __init__(self, username:str, password:str):
+    FIELD_USERNAME = "username"
+    FIELD_PASSWORD = "password"
+    FIELD_NAME = "name"
+    FIELD_EMAIL = "email"
+    FIELD_PHONE = "phone"
+    FIELD_ADDRESS = "address"
+    FIELD_AVATAR = "avatar"
+
+    ALL_FIELDS = [FIELD_USERNAME, FIELD_PASSWORD, FIELD_NAME, FIELD_EMAIL, FIELD_PHONE, FIELD_ADDRESS, FIELD_AVATAR]
+
+    def __init__(
+            self,
+            username: str = None,
+            name: str = None,
+            email: str = None,
+            phone: str = None,
+            address: str = None,
+            avatar: str = None
+    ):
         self.username = username
-        self.password = password
+        self.name = name
+        self.email = email
+        self.phone = phone
+        self.address = address
+        self.avatar = avatar
+
+    def _dict_to_user(self, user_dict: dict = None):
+        if not user_dict:
+            return None
         
-    def _hash_pw(self) -> str:
-        return User.__pwd_context.hash(self.password)
-    
-    def _verify_pw(self, hashed_pw:str) -> bool:
-        return User.__pwd_context.verify(self.password, hashed_pw)
-    
-    def save(self, user_collection):
-        if user_collection.find_one({User.FIELD_USERNAME: self.username}):
-            raise HTTPException(status_code=400,detail="Username already exists")
-        
-        hashed_pw = self._hash_pw()
-        user_collection.insert_one({
-            User.FIELD_USERNAME: self.username,
-            User.FIELD_PASSWORD: hashed_pw
-        })
-        return {'message': 'User registered successful'}
-    
-    def authenticate(self, user_collection):
-        user = user_collection.find_one({User.FIELD_USERNAME: self.username})
-        if not (user and self._verify_pw(user[User.FIELD_PASSWORD])):
-            raise HTTPException(status_code=400, detail="Invalid credentials")
-        
-        session_id = secrets.token_hex(32)
-        user_collection.update_one(
-            {User.FIELD_USERNAME: self.username},
-            {'$set': {User.FIELD_SESSION: session_id}}
+        for key in user_dict:
+            if key not in self.ALL_FIELDS:
+                raise Exception(f"Invalid user field at field: {key}")
+            
+        return User(
+            username=user_dict.get(self.FIELD_USERNAME),
+            name=user_dict.get(self.FIELD_NAME),
+            email=user_dict.get(self.FIELD_EMAIL),
+            phone=user_dict.get(self.FIELD_PHONE),
+            address=user_dict.get(self.FIELD_ADDRESS),
+            avatar=user_dict.get(self.FIELD_AVATAR)
         )
-        return session_id
+    
+    def _user_to_dict(self):
+        user_dict = {}
+        for key in self.ALL_FIELDS:
+            if hasattr(self, key):
+                user_dict[key] = getattr(self, key)
+        
+        return user_dict
