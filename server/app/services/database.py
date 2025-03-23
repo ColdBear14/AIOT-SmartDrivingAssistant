@@ -1,12 +1,11 @@
-# import sys
-# import os
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.custom_logger import CustomLogger
 
 from pymongo import MongoClient
 from datetime import datetime
 
 class Database:
+    FIELD_MONGO_URL = "mongo_url"
+    FIELD_DB_NAME = "db_name"
     _instance = None
     _cache_data = {}
 
@@ -17,23 +16,23 @@ class Database:
         return cls._instance
 
     def _init_database(self, config, test_mode=False):
-        if config == None or not config.contains("mongo_url") or not config.contains("db_name"):
+        if config == None or not config.contains(self.FIELD_MONGO_URL) or not config.contains(self.FIELD_DB_NAME):
             from dotenv import load_dotenv
             import os
 
             load_dotenv()
             config = {
-                "mongo_url": os.getenv("MONGODB_URL"),
-                "db_name": os.getenv("MONGODB_DB_NAME")
+                self.FIELD_MONGO_URL: os.getenv("MONGODB_URL"),
+                self.FIELD_DB_NAME: os.getenv("MONGODB_DB_NAME")
             }
             CustomLogger().get_logger().info("Database's config: " + str(config))
 
-        self.client = MongoClient(config["mongo_url"])
+        self.client = MongoClient(config[self.FIELD_MONGO_URL])
         if test_mode:
             CustomLogger().get_logger().info("Database: Test mode.")
             self.db = self.client['test']
         else:
-            self.db = self.client[config["db_name"]]
+            self.db = self.client[config[self.FIELD_DB_NAME]]
         self.collections = set()
 
     def _add_doc_with_timestamp(self, collection_name=None, document=None):

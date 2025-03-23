@@ -1,8 +1,3 @@
-# import os
-# import sys
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-# from utils.custom_logger import CustomLogger
-
 from bson import ObjectId
 from passlib.context import CryptContext
 import secrets
@@ -10,7 +5,7 @@ import secrets
 from services.database import Database
 from models.request import UserRequest
 
-import redis
+# import redis
 from datetime import datetime, timedelta
 
 # redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -84,6 +79,7 @@ class AuthService:
         session_id = secrets.token_hex(32)
         expiration_time = datetime.now() + timedelta(hours=1)
 
+    # Store session in Redis
         # redis_client.hmset(session_id, {
         #     'user_id': uid,
         #     'expiration_time': expiration_time.isoformat()
@@ -123,7 +119,7 @@ class AuthService:
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=True, # False to test api with postman
+            secure=False, # False to test api with postman
             samesite="None",
             path="/",
             max_age=3600

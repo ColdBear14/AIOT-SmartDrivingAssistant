@@ -11,7 +11,7 @@ from services.user_service import UserService
 
 router = APIRouter()
 
-@router.get("/infor")
+@router.get("/")
 async def get_user_info(request: Request):
     uid = request.state.user_id
 
@@ -19,25 +19,26 @@ async def get_user_info(request: Request):
         user = UserService()._get_user_info(uid)
         if user:
             data = {}
-            for key in ["name", "email", "phone", "address"]:
+            for key in UserService().ALL_FIELDS:
                 if key in user:
                     data[key] = user[key]
             CustomLogger().get_logger().info(f"User info: {data}")
 
             return JSONResponse(
                 content=data,
-                status_code=200
+                status_code=200,
+                media_type="application/json"
             )
         else:
             raise HTTPException(status_code=404, detail="User not found")
         
     except Exception as e:
-        if e.args[0] == "Invalid ObjectID":
-            raise HTTPException(status_code=400, detail="Invalid user ID")
+        if e.type == "ValueError":
+            raise HTTPException(status_code=500, detail="Cannot extract user info from request's cookies")
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
     
-@router.put("/infor")
+@router.put("/")
 async def update_user_info(request: Request, user_info_request: UserInfoRequest):
     uid = request.state.user_id
 
@@ -47,16 +48,22 @@ async def update_user_info(request: Request, user_info_request: UserInfoRequest)
 
         return JSONResponse(
             content={"message": "User info updated successfully"},
-            status_code=200
+            status_code=200,
+            media_type="application/json"
         )
     
     except Exception as e:
-        if e.args[0] == "Invalid ObjectID":
-            raise HTTPException(status_code=400, detail="Invalid user ID")
+        if e.type == "ValueError":
+            if e.args[0] == "No valid fields to update":
+                raise HTTPException(status_code=400, detail="No valid fields to update")
+            elif e.args[0] == "No user info updated":
+                raise HTTPException(status_code=400, detail="No user info updated")
+            else:
+                raise HTTPException(status_code=500, detail="Cannot extract user info from request's cookies")
         else:
             raise HTTPException(status_code=500, detail="Internal server error")
     
-@router.delete("/delete")
+@router.delete("/")
 async def delete_user_info(request: Request):
     uid = request.state.user_id
 
@@ -72,7 +79,7 @@ async def delete_user_info(request: Request):
         return response
     
     except Exception as e:
-        if e.args[0] == "Invalid ObjectID":
-            raise HTTPException(status_code=400, detail="Invalid user ID")
+        if e.type == "ValueError":
+            raise HTTPException(status_code=500, detail="Cannot extract user info from request's cookies")
         else:
             raise HTTPException(status_code=500, detail="Internal server error")

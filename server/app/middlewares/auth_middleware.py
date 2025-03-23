@@ -1,8 +1,7 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# import os
+# import sys
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.custom_logger import CustomLogger
-import secrets
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,7 +20,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Skip authentication for whitelisted paths
         if request.url.path in self.whitelist:
-            CustomLogger().get_logger().info("AuthMiddleware: Skip authentication for whitelisted path")
+            CustomLogger().get_logger().info(f"AuthMiddleware: Skip authentication for {request.url.path}")
             return await call_next(request)
 
         # Check for session token in cookies
@@ -29,7 +28,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if not session_id:
             return JSONResponse({"detail": "Unauthorized: Missing session token"}, status_code=401)
 
-        # Validate session in Redis
+    # Validate session in Redis
         # session_data = redis_client.hgetall(session_id)
         # if not session_data:
         #     return JSONResponse({"detail": "Unauthorized: Invalid or expired session token"}, status_code=401)

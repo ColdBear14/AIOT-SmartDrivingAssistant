@@ -21,17 +21,20 @@ app.add_middleware(
 )
 app.add_middleware(AuthMiddleware)
 
+from routes.auth_routes import router as auth_router
+app.include_router(auth_router, prefix='/auth')
+
+from routes.user_routes import router as user_router
+app.include_router(user_router, prefix='/user')
+
+from routes.iot_routes import router as iot_router
+app.include_router(iot_router, prefix='/iot')
+
+for route in app.routes:
+    CustomLogger().get_logger().info(route)
+
 if __name__ == '__main__':
     CustomLogger().get_logger().info("main: __main__")
 
-    from routes.auth_routes import router as auth_router
-    app.include_router(auth_router, prefix='/auth')
-
-    from routes.user_routes import router as user_router
-    app.include_router(user_router, prefix='/user')
-
-    from routes.iot_routes import router as iot_router
-    app.include_router(iot_router, prefix='/iot')
-
     import uvicorn
-    uvicorn.run(app, host='127.0.0.1', port=8000)
+    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)

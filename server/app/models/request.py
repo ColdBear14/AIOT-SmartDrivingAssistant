@@ -13,4 +13,4 @@ class UserInfoRequest(BaseModel):
     
 class SensorRequest(BaseModel):
     sensor_type: Literal["temp","humid","lux","dist"]
-    amt: int = Field(...,ge=1)
+    amt: int = Field(...,ge=1, le=100)
