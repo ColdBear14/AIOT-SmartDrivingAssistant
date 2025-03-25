@@ -14,16 +14,12 @@ async def get_user_info(request: Request):
     uid = request.state.user_id
 
     try:
-        user = UserService()._get_user_info(uid)
-        if user:
-            data = {}
-            for key in UserService().ALL_TEXT_FIELDS:
-                if key in user:
-                    data[key] = user[key]
-            CustomLogger().get_logger().info(f"User info: {data}")
+        user_data = UserService()._get_user_info(uid)
+        if user_data:
+            CustomLogger().get_logger().info(f"User info: {user_data}")
 
             return JSONResponse(
-                content=data,
+                content=user_data,
                 status_code=200,
                 media_type="application/json"
             )
@@ -99,16 +95,12 @@ async def get_user_config(request: Request):
     uid = request.state.user_id
 
     try:
-        user_config = UserService()._get_user_config(uid)
-        if user_config:
-            data = {}
-            for key in UserService().ALL_BOOL_FIELDS:
-                if key in user_config:
-                    data[key] = user_config[key]
-            CustomLogger().get_logger().info(f"User config: {data}")
+        user_config_data = UserService()._get_user_config(uid)
+        if user_config_data:
+            CustomLogger().get_logger().info(f"User config: {user_config_data}")
 
             return JSONResponse(
-                content=data,
+                content=user_config_data,
                 status_code=200,
                 media_type="application/json"
             )

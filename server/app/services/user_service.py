@@ -51,12 +51,25 @@ class UserService:
 
     def _get_user_info(self, uid: str = None) -> dict:
         '''
-            Get user info from the database by user id string but without the ObjectId "_id" field.
+            Get user info from the database by user id string.
+
+            Args:
+                uid: The user id string.
+
+            Returns:
+                A dictionary containing the user's basic info.
         '''
         user = Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
-        if (user and '_id' in user):
-            user.pop('_id', None)
-        return user
+
+        if not user:
+            return None
+
+        data = {}
+        for key in self.ALL_TEXT_FIELDS:
+            if key in user:
+                data[key] = user[key]
+
+        return data
     
     def _update_user_info(self, uid: str = None, user_info_request: UserInfoRequest = None):
         '''
@@ -64,13 +77,13 @@ class UserService:
         '''
         update_data = {}
         if user_info_request.name:
-            update_data[UserService.FIELD_NAME] = user_info_request.name
+            update_data[self.FIELD_NAME] = user_info_request.name
         if user_info_request.email:
-            update_data[UserService.FIELD_EMAIL] = user_info_request.email
+            update_data[self.FIELD_EMAIL] = user_info_request.email
         if user_info_request.phone:
-            update_data[UserService.FIELD_PHONE] = user_info_request.phone
+            update_data[self.FIELD_PHONE] = user_info_request.phone
         if user_info_request.address:
-            update_data[UserService.FIELD_ADDRESS] = user_info_request.address
+            update_data[self.FIELD_ADDRESS] = user_info_request.address
         
         if update_data == {}:
             raise ValueError("No valid fields to update")
@@ -119,9 +132,15 @@ class UserService:
             Get user config from the database by user id string.
         '''
         user_config = Database()._instance.get_user_config_collection().find_one({'uid': uid})
-        if (user_config and '_id' in user_config):
-            user_config.pop('_id', None)
-        return user_config
+        
+        if not user_config:
+            return None
+        
+        data = {}
+        for key in self.ALL_BOOL_FIELDS:
+            data[key] = user_config[key]
+
+        return data
 
     def _update_user_config(self, uid: str = None, user_config_request: UserConfigRequest = None):
         '''
