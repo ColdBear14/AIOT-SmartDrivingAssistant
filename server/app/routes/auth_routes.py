@@ -1,13 +1,13 @@
-# import os
-# import sys
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.custom_logger import CustomLogger
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from starlette.responses import JSONResponse
 
-from models.request import UserRequest
+from pymongo.errors import PyMongoError
+
 from services.auth_service import AuthService
+
+from models.request import UserRequest
 
 router = APIRouter()
 
@@ -26,10 +26,12 @@ async def register(user: UserRequest):
                 status_code=201
             )
         else:
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Result invalid")
 
     except Exception as e:
-        if e.args[0] == "Username already exists":
+        if e.__class__ == PyMongoError:
+            raise HTTPException(status_code=500, detail="Can not operate database transaction")
+        elif e.args[0] == "Username already exists":
             raise HTTPException(status_code=400, detail="Username already exists")
         else:
             raise HTTPException(status_code=500, detail="Internal server error")

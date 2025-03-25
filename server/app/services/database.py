@@ -1,3 +1,4 @@
+from bson import ObjectId
 from utils.custom_logger import CustomLogger
 
 from pymongo import MongoClient
@@ -6,16 +7,19 @@ from datetime import datetime
 class Database:
     FIELD_MONGO_URL = "mongo_url"
     FIELD_DB_NAME = "db_name"
+    FIELD_USER_COLLECTION = "user"
+    FIELD_ENV_SENSOR_COLLECTION = "environment_sensor"
+    FIELD_USER_CONFIG_COLLECTION = "user_config"
     _instance = None
     _cache_data = {}
 
-    def __new__(cls, config=None, test_mode=False):
+    def __new__(cls, config: dict=None, test_mode: bool=False):
         if cls._instance is None:
             cls._instance = super(Database, cls).__new__(cls)
             cls._instance._init_database(config, test_mode)
         return cls._instance
 
-    def _init_database(self, config, test_mode=False):
+    def _init_database(self, config: dict=None, test_mode: bool=False):
         if config == None or not config.contains(self.FIELD_MONGO_URL) or not config.contains(self.FIELD_DB_NAME):
             from dotenv import load_dotenv
             import os
@@ -35,7 +39,7 @@ class Database:
             self.db = self.client[config[self.FIELD_DB_NAME]]
         self.collections = set()
 
-    def _add_doc_with_timestamp(self, collection_name=None, document=None):
+    def _add_doc_with_timestamp(self, collection_name: str=None, document: dict=None):
         '''Add new document to collection with timestamp'''
         if collection_name is None or document is None:
             return None
@@ -49,27 +53,16 @@ class Database:
     
 # User region
     def get_user_collection(self):
-        return self.db.get_collection('user')
+        return self.db.get_collection(self.FIELD_USER_COLLECTION)
     
-    def get_user_doc_by_id(self, id):
-        return self.get_user_collection().find_one({'_id': id})
+    def get_user_config_collection(self):
+        return self.db.get_collection(self.FIELD_USER_CONFIG_COLLECTION)
 # End user region
     
-# UserConfig region
-    def get_userconfig_collection(self):
-        return self.db.get_collection('userconfig')
-    
-    def get_userconfig_doc_by_id(self, id):
-        return self.get_userconfig_collection().find_one({'_id': id})
-# End userconfig region
-    
-# Sensor region
-    def get_sensor_collection(self):
-        return self.db.get_collection('environment_sensor')
-    
-    def get_sensor_doc_by_id(self, id):
-        return self.get_sensor_collection().find_one({'_id': id})
-# End sensor region
+# IOT region
+    def get_env_sensor_collection(self):
+        return self.db.get_collection(self.FIELD_ENV_SENSOR_COLLECTION)
+# End IOT region
 
 if __name__ == '__main__':
     def test():

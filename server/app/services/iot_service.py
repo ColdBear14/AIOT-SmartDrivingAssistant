@@ -15,7 +15,7 @@ class IOTService:
         amt = request.amt
 
         # Query updated to access nested fields in 'metadata'
-        data = Database()._instance.get_sensor_collection().find(
+        data = Database()._instance.get_env_sensor_collection().find(
             {
                 self.FIELD_UID: uid,
                 self.FIELD_SENSOR_TYPE: sensor_type
@@ -30,7 +30,7 @@ class IOTService:
         Fetch all sensor data for a specific user.
         """
         # Query updated to access nested 'uid' field in 'metadata'
-        data = Database()._instance.get_sensor_collection().find(
+        data = Database()._instance.get_env_sensor_collection().find(
             {self.FIELD_UID: uid},
             sort=[(self.FIELD_TIMESTAMP, -1)],
             limit=50

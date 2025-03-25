@@ -44,7 +44,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 status_code=401
             )
 
-        CustomLogger().get_logger().info(f"AuthMiddleware: User info: {user}")
+        CustomLogger().get_logger().info(f"AuthMiddleware: User info: {user['username']} - {str(user['_id'])}")
 
         user_id = user["_id"]
         expiration_time = user["session_expiration"]

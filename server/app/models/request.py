@@ -10,6 +10,12 @@ class UserInfoRequest(BaseModel):
     email: str = Field(..., email=True)
     phone: str = Field(...,min_length=10,max_length=10, pattern="^[0-9]*$")
     address: str = Field(...,max_length=100)
+
+class UserConfigRequest(BaseModel):
+    temp_service: bool = False
+    humid_service: bool = False
+    lux_service: bool = False
+    dist_service: bool = False
     
 class SensorRequest(BaseModel):
     sensor_type: Literal["temp","humid","lux","dist"]

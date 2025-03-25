@@ -2,11 +2,15 @@ from bson import ObjectId
 from passlib.context import CryptContext
 import secrets
 
+from pymongo.errors import PyMongoError
 from services.database import Database
+
+from services.user_service import UserService
+
 from models.request import UserRequest
 
-# import redis
 from datetime import datetime, timedelta
+# import redis
 
 # redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
@@ -33,45 +37,85 @@ class AuthService:
         else:
             return AuthService.__pwd_context.verify(password, hashed_pw)
     
-    def _register(self, user_request: UserRequest = None) -> str:
+    def _register(self, user_request: UserRequest = None) -> dict:
         '''
-        Save new user to database. Return the inserted document's id.
-        Exception is raised if the username already exists or if the user_request object is not provided.
+        Register a new user in the database.
+
+        Args:
+            user_request: An instance of UserRequest containing the username and password.
+
+        Returns:
+            A dictionary containing the document IDs of the newly created user and user configuration.
+
+        Raises:
+            Exception: If the username already exists.
+            PyMongoError: If there is an error during the database transaction.
         '''
-        if Database()._instance.get_user_collection().find_one({AuthService.FIELD_USERNAME: user_request.username}):
+
+        if Database()._instance.get_user_collection().find_one({self.FIELD_USERNAME: user_request.username}):
             raise Exception("Username already exists")
         
         hashed_pw = self._hash_pw(user_request.password)
-        result = Database()._instance.get_user_collection().insert_one({
-            AuthService.FIELD_USERNAME: user_request.username,
-            AuthService.FIELD_PASSWORD: hashed_pw
-        })
+        
+        init_user_data, init_user_config_data = UserService()._create_init_user_data(user_request.username, hashed_pw)
 
-        return result.inserted_id
+        session = Database()._instance.client.start_session()
+        try:
+            with session.start_transaction():
+                user_result = Database()._instance.get_user_collection().insert_one(
+                    init_user_data,
+                    session=session
+                )
+
+                init_user_config_data[UserService().FILED_UID] = str(user_result.inserted_id)
+
+                user_config_result = Database()._instance.get_user_config_collection().insert_one(
+                    init_user_config_data,
+                    session=session
+                )
+            
+            return {
+                "user_doc_id": str(user_result.inserted_id),
+                "user_config_doc_id": str(user_config_result.inserted_id)
+            }
+
+        except PyMongoError as e:
+            session.abort_transaction()
+            raise e
     
     def _authenticate(self, user_request: UserRequest = None) -> tuple[str, str]:
         '''
-        Authenticate user.
-        Parameters: user_request (UserRequest object with username and password)
-        Return the session id.
-        Exception is raised if the credentials are invalid or if the user_request object is not provided.
+        Authenticate a user using the provided UserRequest object.
+
+        Args:
+            user_request: An instance of UserRequest containing the username and password.
+
+        Returns:
+            A tuple containing the session id and user id as strings.
+
+        Raises:
+            Exception: If the credentials are invalid or if the user_request object is not provided.
         '''
-        user = Database()._instance.get_user_collection().find_one({AuthService.FIELD_USERNAME: user_request.username})
-        if not (user and self._verify_pw(user[AuthService.FIELD_PASSWORD], user_request.password)):
+
+        user = Database()._instance.get_user_collection().find_one({self.FIELD_USERNAME: user_request.username})
+        if not (user and self._verify_pw(user[self.FIELD_PASSWORD], user_request.password)):
             raise Exception("Invalid credentials")
         
-        session_id = AuthService()._create_session(user['_id'])
+        session_id = self._create_session(user['_id'])
         return (session_id, str(user['_id']))
     
     def _create_session(self, uid: ObjectId = None) -> str:
         '''
-        Create a new session for the user.
-        Parameters: uid (ObjectId of user id)
-        Return the session id.
+        Create a new session for the given user id.
 
-        Exception is raised if the user id is not provided or if the session creation fails for any reason.
+        Args:
+            uid: The ObjectId of the user.
 
-        Optional: store the session id in Redis.
+        Returns:
+            The session id as a string.
+
+        Raises:
+            Exception: If the user id is not provided or if the session creation fails.
         '''
         if not uid:
             raise Exception("User ID is required")
@@ -89,7 +133,7 @@ class AuthService:
         result = Database()._instance.get_user_collection().update_one(
             {'_id': uid},
             {'$set': {
-                AuthService.FIELD_SESSION: session_id,
+                self.FIELD_SESSION: session_id,
                 'session_expiration': expiration_time
             }}
         )
@@ -100,12 +144,21 @@ class AuthService:
     
     def _del_session(self, session_id: str = None) -> bool:
         '''
-        Delete the session from the database. Return True if the session is deleted successfully.
+        Delete a session for the given session id.
+
+        Args:
+            session_id: The session id as a string.
+
+        Returns:
+            True if the session is deleted successfully, False otherwise.
+
+        Raises:
+            Exception: If the session id is not provided or if the session does not exist.
         '''
         result = Database()._instance.get_user_collection().update_one(
-            {AuthService.FIELD_SESSION: session_id},
+            {self.FIELD_SESSION: session_id},
             {'$unset': {
-                AuthService.FIELD_SESSION: '',
+                self.FIELD_SESSION: '',
                 'session_expiration': ''
             }}
         )
@@ -113,7 +166,14 @@ class AuthService:
     
     def _add_cookie(self, response, session_id: str = None) -> dict:
         '''
-        Create a cookie with the session id and attach it to the response object.
+        Add a session id cookie to the given response.
+
+        Args:
+            response: The Response object to add the cookie to.
+            session_id: The session id as a string.
+
+        Returns:
+            The Response object with the added cookie.
         '''
         response.set_cookie(
             key="session_id",

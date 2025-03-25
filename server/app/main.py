@@ -30,8 +30,8 @@ app.include_router(user_router, prefix='/user')
 from routes.iot_routes import router as iot_router
 app.include_router(iot_router, prefix='/iot')
 
-for route in app.routes:
-    CustomLogger().get_logger().info(route)
+# for route in app.routes:
+#     CustomLogger().get_logger().info(route)
 
 if __name__ == '__main__':
     CustomLogger().get_logger().info("main: __main__")
