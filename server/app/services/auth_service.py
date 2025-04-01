@@ -1,3 +1,5 @@
+import os
+
 from bson import ObjectId
 from passlib.context import CryptContext
 import secrets
@@ -8,6 +10,7 @@ from services.database import Database
 from services.user_service import UserService
 
 from models.request import UserRequest
+from models.mongo_doc import UserDocument, UserConfigDocument
 
 from datetime import datetime, timedelta
 # import redis
@@ -16,10 +19,6 @@ from datetime import datetime, timedelta
 
 class AuthService:
     __pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-    
-    FIELD_USERNAME = 'username'
-    FIELD_PASSWORD = 'password'
-    FIELD_SESSION = 'session_id'
 
     # def __init__(self, username:str, password:str):
     #     self.username = username
@@ -52,7 +51,7 @@ class AuthService:
             PyMongoError: If there is an error during the database transaction.
         '''
 
-        if Database()._instance.get_user_collection().find_one({self.FIELD_USERNAME: user_request.username}):
+        if Database()._instance.get_user_collection().find_one({UserDocument.FIELD_USERNAME: user_request.username}):
             raise Exception("Username already exists")
         
         hashed_pw = self._hash_pw(user_request.password)
@@ -67,7 +66,7 @@ class AuthService:
                     session=session
                 )
 
-                init_user_config_data[UserService().FILED_UID] = str(user_result.inserted_id)
+                init_user_config_data[UserConfigDocument.FIELD_UID] = str(user_result.inserted_id)
 
                 user_config_result = Database()._instance.get_user_config_collection().insert_one(
                     init_user_config_data,
@@ -97,8 +96,8 @@ class AuthService:
             Exception: If the credentials are invalid or if the user_request object is not provided.
         '''
 
-        user = Database()._instance.get_user_collection().find_one({self.FIELD_USERNAME: user_request.username})
-        if not (user and self._verify_pw(user[self.FIELD_PASSWORD], user_request.password)):
+        user = Database()._instance.get_user_collection().find_one({UserDocument.FIELD_USERNAME: user_request.username})
+        if not (user and self._verify_pw(user[UserDocument.FIELD_PASSWORD], user_request.password)):
             raise Exception("Invalid credentials")
         
         session_id = self._create_session(user['_id'])
@@ -133,7 +132,7 @@ class AuthService:
         result = Database()._instance.get_user_collection().update_one(
             {'_id': uid},
             {'$set': {
-                self.FIELD_SESSION: session_id,
+                UserDocument.FIELD_SESSION: session_id,
                 'session_expiration': expiration_time
             }}
         )
@@ -156,9 +155,9 @@ class AuthService:
             Exception: If the session id is not provided or if the session does not exist.
         '''
         result = Database()._instance.get_user_collection().update_one(
-            {self.FIELD_SESSION: session_id},
+            {UserDocument.FIELD_SESSION: session_id},
             {'$unset': {
-                self.FIELD_SESSION: '',
+                UserDocument.FIELD_SESSION: '',
                 'session_expiration': ''
             }}
         )
@@ -175,11 +174,17 @@ class AuthService:
         Returns:
             The Response object with the added cookie.
         '''
+        secure_mode: bool
+        if os.getenv("WEB_CONNECTION") == "False":
+            secure_mode = False
+        else:
+            secure_mode = True
+
         response.set_cookie(
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=True, # False to test api with postman
+            secure=secure_mode, # False to test api with postman
             samesite="None",
             path="/",
             max_age=3600
@@ -196,10 +201,16 @@ class AuthService:
         Returns:
             The Response object with the delete cookie option.
         '''
+        secure_mode: bool
+        if os.getenv("WEB_CONNECTION") == "False":
+            secure_mode = False
+        else:
+            secure_mode = True
+
         response.delete_cookie(
             key="session_id",
             httponly=True,
-            secure=True, # False to test api with postman
+            secure=secure_mode, # False to test api with postman
             samesite="None",
             path="/"
         )

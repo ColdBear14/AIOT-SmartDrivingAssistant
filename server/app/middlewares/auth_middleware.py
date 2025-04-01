@@ -24,6 +24,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         elif request.method == "OPTIONS":
+            CustomLogger().get_logger().info(f"AuthMiddleware: Preflight request for {request.method}-{request.url.path}")
             return await call_next(request)
 
         # Check for session token in cookies

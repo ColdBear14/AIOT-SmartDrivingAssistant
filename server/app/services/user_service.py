@@ -3,25 +3,9 @@ from bson import ObjectId
 from services.database import Database
 
 from models.request import UserConfigRequest, UserInfoRequest
+from models.mongo_doc import UserDocument, UserConfigDocument
 
 class UserService:
-    FIELD_USERNAME = 'username'
-    FILED_PASSWORD = 'password'
-
-    FIELD_NAME = 'name'
-    FIELD_EMAIL = 'email'
-    FIELD_PHONE = 'phone'
-    FIELD_ADDRESS = 'address'
-    FIELD_AVATAR = 'avatar'
-    ALL_TEXT_FIELDS = [FIELD_NAME, FIELD_EMAIL, FIELD_PHONE, FIELD_ADDRESS]
-
-    FILED_UID = 'uid'
-    FIELD_TEMP_SERVICE = 'temp_service'
-    FIELD_HUMID_SERVICE = 'humid_service'
-    FIELD_LUX_SERVICE = 'lux_service'
-    FIELD_DIST_SERVICE = 'dist_service'
-    ALL_BOOL_FIELDS = [FIELD_TEMP_SERVICE, FIELD_HUMID_SERVICE, FIELD_LUX_SERVICE, FIELD_DIST_SERVICE]
-
     def _get_object_id(self, uid: str = None) -> ObjectId:
         '''
             Convert a user id string into an ObjectId for querying the database.
@@ -29,22 +13,22 @@ class UserService:
         try:
             return ObjectId(uid)
         except Exception as e:
-            raise ValueError("Invalid string to ObjectId conversion") from e
+            raise Exception("Invalid string to ObjectId conversion") from e
         
     def _create_init_user_data(self, username: str = None, hashed_password: str = None) -> tuple[dict, dict]:
         '''
             Create 2 dict for initial user's data and user config data for register operation.
         '''
         init_data = {}
-        for field in self.ALL_TEXT_FIELDS:
+        for field in UserDocument.ALL_BASIC_FIELDS:
             init_data[field] = ""
 
-        init_data[self.FIELD_USERNAME] = username
-        init_data[self.FILED_PASSWORD] = hashed_password
-        init_data[self.FIELD_AVATAR] = ""
+        init_data[UserDocument.FIELD_USERNAME] = username
+        init_data[UserDocument.FILED_PASSWORD] = hashed_password
+        init_data[UserDocument.FIELD_AVATAR] = ""
 
         init_config_data = {}
-        for field in self.ALL_BOOL_FIELDS:
+        for field in UserConfigDocument.ALL_SEVICE_FIELDS:
             init_config_data[field] = False
 
         return (init_data, init_config_data)
@@ -62,10 +46,10 @@ class UserService:
         user = Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
 
         if not user:
-            return None
+            raise Exception("User not find")
 
         data = {}
-        for key in self.ALL_TEXT_FIELDS:
+        for key in UserDocument.ALL_BASIC_FIELDS:
             if key in user:
                 data[key] = user[key]
 
@@ -75,25 +59,19 @@ class UserService:
         '''
             Update user info in the database by user id string and UserInfoRequest object.
         '''
-        update_data = {}
-        if user_info_request.name:
-            update_data[self.FIELD_NAME] = user_info_request.name
-        if user_info_request.email:
-            update_data[self.FIELD_EMAIL] = user_info_request.email
-        if user_info_request.phone:
-            update_data[self.FIELD_PHONE] = user_info_request.phone
-        if user_info_request.address:
-            update_data[self.FIELD_ADDRESS] = user_info_request.address
+        update_data = user_info_request.dict(exclude_unset=True)
         
         if update_data == {}:
-            raise ValueError("No valid fields to update")
+            raise Exception("No data to update")
+        
+        print(f"update_data: {update_data}")
         
         result = Database()._instance.get_user_collection().update_one(
             {'_id': self._get_object_id(uid)},
             {'$set': update_data}
         )
         if result.modified_count == 0:
-            raise ValueError("No user info updated")
+            raise Exception("No user info updated")
 
     def _get_user_info_by_session_id(self, session_id: str = None):
         '''
@@ -105,12 +83,21 @@ class UserService:
         user = Database()._instance.get_user_collection().find_one({'session_id': session_id})
         return user
 
-    def _delete_user_info(self, uid: str = None):
+    def _delete_user_account(self, uid: str = None):
         '''
             Delete all user info from the database by user id string. 
         '''
-        Database()._instance.get_user_collection().delete_one({'_id': self._get_object_id(uid)})
-        Database()._instance.get_env_sensor_collection().delete_many({'uid': uid})
+        session = Database()._instance.client.start_session()
+        try:
+            with session.start_transaction():
+                Database()._instance.get_user_collection().delete_one({'_id': self._get_object_id(uid)}, session=session)
+                Database()._instance.get_user_config_collection().delete_one({'uid': uid}, session=session)
+                # Database()._instance.get_env_sensor_collection().delete_many({'uid': uid})
+        except Exception as e:
+            session.abort_transaction()
+            raise Exception("Delete user account failed")
+        finally:
+            session.end_session()
 
     def _get_avatar(self, uid: str = None):
         '''
@@ -137,10 +124,10 @@ class UserService:
         user_config = Database()._instance.get_user_config_collection().find_one({'uid': uid})
         
         if not user_config:
-            return None
+            raise Exception("User config not find")
         
         data = {}
-        for key in self.ALL_BOOL_FIELDS:
+        for key in UserConfigDocument.ALL_SEVICE_FIELDS:
             data[key] = user_config[key]
 
         return data
@@ -149,29 +136,14 @@ class UserService:
         '''
             Update user config in the database by user id string and UserConfigRequest object.
         '''
-        update_data = {}
-        if user_config_request.temp_service is not None:
-            update_data[self.FIELD_TEMP_SERVICE] = user_config_request.temp_service
-        if user_config_request.humid_service is not None:
-            update_data[self.FIELD_HUMID_SERVICE] = user_config_request.humid_service
-        if user_config_request.lux_service is not None:
-            update_data[self.FIELD_LUX_SERVICE] = user_config_request.lux_service
-        if user_config_request.dist_service is not None:
-            update_data[self.FIELD_DIST_SERVICE] = user_config_request.dist_service
+        update_data = user_config_request.dict(exclude_unset=True)
 
         if update_data == {}:
-            raise ValueError("No valid fields to update")
+            raise Exception("No data to update")
         
         result = Database()._instance.get_user_config_collection().update_one(
             {'uid': uid},
             {'$set': update_data}
         )
-        if result.modified_count != 0:
-            return result.upserted_id
-        
-        update_data['uid'] = uid
-        result = Database()._instance.get_user_config_collection().insert_one(
-            update_data
-        )
-
-        return result.inserted_id
+        if result.modified_count == 0:
+            raise Exception("No user config updated")
