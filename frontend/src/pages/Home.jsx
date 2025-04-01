@@ -30,21 +30,14 @@ const Home = () => {
   const handleGetData = async () => {
     setLoading(true);
     setError(null);
-    // try {
-    //   const requestPayload = {
-    //     sensor_type: 'temp',
-    //     amt: 2
-    //   };
-
-    //   const response = await axios.get('http://127.0.0.1:8000/iot/all_data', 
-    //     {
-    //       withCredentials: true
-    //     }
-    //   );
 
     try {
-      const response = await axios.get('http://127.0.0.1:8000/iot/all_data', {
-        withCredentials: true
+      const response = await axios.get(`${process.env.REACT_APP_IOT_SERVER_URL}/iot/all_data`, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
       // Xử lý dữ liệu từ API và cập nhật state

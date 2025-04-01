@@ -1,19 +1,18 @@
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 
-import { UserContext } from '../../hooks/UserContext.jsx';
-
+import axios from 'axios';
 import Cookies from 'js-cookie';
+
+import { UserContext } from '../../hooks/UserContext.jsx';
 
 function LoginForm({ showSignUp }) {
   const navigate = useNavigate();
   const { setSessionId } = useContext(UserContext);
 
   const handleLogin = (e) => {
-    e.preventDefault(); // Ngăn form submit mặc định
-    navigate('/home'); // Chuyển hướng sang Home
-    // Giả lập logic đăng nhập (bạn có thể thêm gọi API ở đây)
+    e.preventDefault();
+
     const username = document.getElementById('username_log').value;
     const password = document.getElementById('password_log').value;
     
@@ -26,10 +25,15 @@ function LoginForm({ showSignUp }) {
       username: username,
       password: password
     }
-
-    axios.defaults.withCredentials = true;
     
-    axios.patch('http://127.0.0.1:8000/auth/login', request)
+    axios.patch(`${process.env.REACT_APP_SERVER_URL}/auth/login`, request, 
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    )
       .then(response => {
         if (response.status === 200) {
           const session_id = Cookies.get('session_id');

@@ -1,9 +1,6 @@
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function SignUpForm({ showLogin }) {
-  const navigate = useNavigate();
-
   const handleSignUp = (e) => {
     e.preventDefault();
 
@@ -21,10 +18,18 @@ function SignUpForm({ showLogin }) {
       password: password,
     }
     
-    axios.patch('http://127.0.0.1:8000/auth/register', request)
+    axios.patch(`${process.env.REACT_APP_SERVER_URL}/auth/register`, request,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    )
       .then(response => {
         if (response.status === 200) {
-          navigate('/home');
+          console.log('Sign-up successful');
+          showLogin();
         } else {
           alert('Sign-up failed');
         }

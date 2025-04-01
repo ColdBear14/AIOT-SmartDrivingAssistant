@@ -19,20 +19,27 @@ const mockData = {
 };
 
 function Profile() {
-  const { sessionId, user, setUser } = useContext(UserContext);
+  const { setUser } = useContext(UserContext);
 
   const [formData, setFormData] = useState(mockData);
   const [avatar, setAvatar] = useState(defaultAvatar);
 
-  // Call API
   useEffect(() => {
     axios.defaults.withCredentials = true;
-    axios.get("http://127.0.0.1:8000/user/infor")
+    axios.get(`${process.env.REACT_APP_SERVER_URL}/user`,
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    )
       .then((response) => {
         console.log("Dữ liệu tải về:", response.data);
-        setUser(response.data);
 
-        // setFormData(response.data);
+        setUser(response.data);
+        setFormData(response.data);
       })
       .catch((error) => {
         console.error("Lỗi khi tải dữ liệu:", error);
@@ -58,8 +65,10 @@ function Profile() {
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
+
     if (file) {
       const reader = new FileReader();
+
       reader.onload = (event) => setAvatar(event.target.result);
       reader.readAsDataURL(file);
     }
@@ -69,12 +78,22 @@ function Profile() {
     e.preventDefault();
 
     try {
-      const response = await axios.put("http://127.0.0.1:8000/user/infor", formData);
+      const response = await axios.put(`${process.env.REACT_APP_SERVER_URL}/user`, formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
       console.log("Dữ liệu gửi đi:", response.data);
-      setUser(response.data);
-      alert("Profile saved successfully! (Check console)");
+
+      setUser(formData);
+
+      alert("Profile saved successfully!");
     } catch (error) {
       console.error("Lỗi khi gửi dữ liệu:", error);
+
       alert("Có lỗi xảy ra khi lưu dữ liệu.");
     }
   };
