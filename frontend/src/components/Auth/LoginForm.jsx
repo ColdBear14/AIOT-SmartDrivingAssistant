@@ -26,25 +26,17 @@ function LoginForm({ showSignUp }) {
       password: password
     }
     
-    axios.patch(`${process.env.REACT_APP_SERVER_URL}/auth/login`, request, 
+    axios.patch(`${import.meta.env.VITE_SERVER_URL}/auth/login`, request, 
       {
+        withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         }
       }
     )
       .then(response => {
-        if (response.status === 200) {
-          const session_id = Cookies.get('session_id');
-          if (session_id) {
-            setSessionId(session_id);
-          }
-          console.log(`Login successful with response: ${response} and session_id: ${session_id}`);
-          navigate('/home');
-        } else {
-          alert('Login failed');
-        }
+        console.log(`Login successful with response: ${response.data}`);
+        navigate('/home');
       })
       .catch(error => {
         console.error('Error:', error);

@@ -99,6 +99,9 @@ class UserService:
         '''
             Get user info from the database by current user's session, included '_id' field.
         '''
+        if not session_id:
+            return None
+        
         user = Database()._instance.get_user_collection().find_one({'session_id': session_id})
         return user
 

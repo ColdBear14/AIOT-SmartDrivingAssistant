@@ -18,7 +18,7 @@ function SignUpForm({ showLogin }) {
       password: password,
     }
     
-    axios.patch(`${process.env.REACT_APP_SERVER_URL}/auth/register`, request,
+    axios.post(`${import.meta.env.VITE_SERVER_URL}/auth/register`, request,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -27,12 +27,8 @@ function SignUpForm({ showLogin }) {
       }
     )
       .then(response => {
-        if (response.status === 200) {
-          console.log('Sign-up successful');
-          showLogin();
-        } else {
-          alert('Sign-up failed');
-        }
+        console.log('Sign-up successful: ', response.data);
+        showLogin();
       })
       .catch(error => {
         console.error('Error:', error);

@@ -50,7 +50,7 @@ async def login(user: UserRequest, response: Response):
                 content={"message": "Login successful"},
                 status_code=200
             )
-            response = AuthService()._add_cookie(response, session_id)
+            response = AuthService()._add_cookie_session(response, session_id)
             
             return response
         else:
@@ -76,7 +76,9 @@ async def logout(request: Request, response: Response):
                 content={"message": "Logout successful"},
                 status_code=200
             )
-            response.delete_cookie("session_id")  # Delete cookie from client
+            # response.delete_cookie("session_id")
+            response = AuthService()._del_cookie_session(response)
+
             return response
         else:
             raise HTTPException(status_code=500, detail="Session not found")

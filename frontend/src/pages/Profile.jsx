@@ -26,12 +26,11 @@ function Profile() {
 
   useEffect(() => {
     axios.defaults.withCredentials = true;
-    axios.get(`${process.env.REACT_APP_SERVER_URL}/user`,
+    axios.get(`${import.meta.env.VITE_SERVER_URL}/user`,
       {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         }
       }
     )
@@ -78,11 +77,10 @@ function Profile() {
     e.preventDefault();
 
     try {
-      const response = await axios.put(`${process.env.REACT_APP_SERVER_URL}/user`, formData, {
+      const response = await axios.put(`${import.meta.env.VITE_SERVER_URL}/user`, formData, {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         }
       });
 

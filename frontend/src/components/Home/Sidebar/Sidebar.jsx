@@ -4,25 +4,28 @@ import clsx from "clsx"
 import Robot from '../../../assets/robot.svg'
 
 import axios from "axios"
-import { useContext } from "react"
-import { UserContext } from "../../../hooks/UserContext.jsx"
 
 const SideBar = () => {
-  // handleLogout = () => {
-  //   try {
-  //     axios.patch('http://127.0.0.1:8000/auth/logout')
-  //     .then(response => {
-  //       if (response.status === 200) {
-  //         console.log('Logout successful');
-  //       } else {
-  //         console.log('Logout failed');
-  //       }
-  //     })
-  //   }
-  //   catch (error) {
-  //     console.log(error)
-  //   }
-  // }
+  const handleLogout = async () => {
+    try {
+      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/auth/logout`, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response) {
+        console.log("Logout successful: ", response.data);
+      }
+      else {
+        alert("Something's wrong!");
+      }
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
 
   return (
     <nav className={styles.wrapper}>
@@ -56,7 +59,7 @@ const SideBar = () => {
           Profile
         </NavLink></li>
         <li>
-          <NavLink to="/" className={styles.sidebarLink}>
+          <NavLink to="/" className={styles.sidebarLink} onClick={handleLogout}>
             <div className={styles.icon}>
               <i className="fa-solid fa-right-from-bracket"></i>
             </div>

@@ -22,7 +22,7 @@ const Home = () => {
       temperature: 0,
     }
   });
-  // Tích hợp APT
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { sessionId, sensorData, setSensorData } = useContext(UserContext);
@@ -32,47 +32,56 @@ const Home = () => {
     setError(null);
 
     try {
-      const response = await axios.get(`${process.env.REACT_APP_IOT_SERVER_URL}/iot/all_data`, {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/iot/all_data`, {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         }
       });
 
       // Xử lý dữ liệu từ API và cập nhật state
       const sensorList = response.data.slice(0, 10);
-      const newData = {};
 
       sensorList.forEach(sensor => {
         const value = parseFloat(sensor.value);
-        console.log("sensor.type: ", sensor.sensor_type, "value: ", value);
-        switch(sensor.sensor_type) {
-          case ' !dis':
-            newData.distance = value;
+        let type = sensor.sensor_type.toString().toLowerCase().replace(/\s+|\W+/g, '');
+
+        switch(type) {
+          case 'temp':
+            setData((prevData) => ({
+              ...prevData,
+              temperature: value,
+            }));
             break;
-          case ' !temp':
-            newData.temperature = value;
-            break;
+
           case 'humid':
-            newData.humidity = value;
+            setData((prevData) => ({
+              ...prevData,
+              humidity: value,
+            }));
             break;
-          case ' !lux':
-            newData.lightLevel = value;
+
+          case 'dis':
+            setData((prevData) => ({
+              ...prevData,
+              distance: value,
+            }));
             break;
-          case 'incline':
-            newData.incline = value;
+
+          case 'lux':
+            setData((prevData) => ({
+              ...prevData,
+              lightLevel: value,
+            }));
             break;
+
           default:
             break;
         }
       });
-
       setSensorData(sensorList);
-      console.log("Dữ liệu tải về:", sensorList);
-
-      setData(newData);
-      console.log("asdfsaglkcjvlxkjcvlkjxjvx: ", data);
+      
+      console.log("Received data: ", sensorList);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -99,7 +108,6 @@ const Home = () => {
 
   // Compute the warning dynamically based on the current distance
   const distanceWarning = getDistanceWarning(data.distance);
-
 
   return (
     <>
@@ -153,7 +161,7 @@ const Home = () => {
               <ul className="ms-3 list-unstyled mb-0">
                 {sensorData && sensorData.slice(0, 3).map((sensor, index) => (
                   <li key={index} className="text-muted mb-1">
-                    {new Date(sensor.timestamp.$date).toLocaleTimeString()} - {sensor.sensor_type}: {sensor.value}
+                    {new Date(sensor.timestamp).toLocaleTimeString()} - {sensor.sensor_type}: {sensor.value}
                   </li>
                 ))}
               </ul>
