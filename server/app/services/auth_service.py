@@ -164,7 +164,7 @@ class AuthService:
         )
         return result.modified_count > 0
     
-    def _add_cookie(self, response, session_id: str = None) -> dict:
+    def _add_cookie_session(self, response, session_id: str = None) -> dict:
         '''
         Add a session id cookie to the given response.
 
@@ -183,5 +183,24 @@ class AuthService:
             samesite="None",
             path="/",
             max_age=3600
+        )
+        return response
+    
+    def _del_cookie_session(self, response) -> dict:
+        '''
+        Del the session id in cookie of the request.
+
+        Args:
+            response: The Response object to delete session in cookie.
+
+        Returns:
+            The Response object with the delete cookie option.
+        '''
+        response.delete_cookie(
+            key="session_id",
+            httponly=True,
+            secure=True, # False to test api with postman
+            samesite="None",
+            path="/"
         )
         return response

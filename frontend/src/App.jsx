@@ -1,13 +1,12 @@
 import { Fragment } from 'react'
 import { Routes, Route } from 'react-router-dom'
+
 import { publicRoutes } from './Routes'
 import DefaultLayout from './components/Home'
 import Auth from './pages/Auth'
-
 import { UserProvider } from './hooks/UserContext.jsx'
 
 function App() {
-
   return (
     <UserProvider>
       <div className='App'>
