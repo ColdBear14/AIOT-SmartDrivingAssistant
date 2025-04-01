@@ -26,8 +26,9 @@ function Profile() {
 
   // Call API
   useEffect(() => {
-    axios.defaults.withCredentials = true;
-    axios.get("http://127.0.0.1:8000/user/infor")
+    axios.get("http://127.0.0.1:8000/user", {
+      withCredentials: true
+    })
       .then((response) => {
         console.log("Dữ liệu tải về:", response.data);
         setUser(response.data);
@@ -69,7 +70,9 @@ function Profile() {
     e.preventDefault();
 
     try {
-      const response = await axios.put("http://127.0.0.1:8000/user/infor", formData);
+      const response = await axios.put("http://127.0.0.1:8000/user", formData, {
+        withCredentials: true
+      });
       console.log("Dữ liệu gửi đi:", response.data);
       setUser(response.data);
       alert("Profile saved successfully! (Check console)");
