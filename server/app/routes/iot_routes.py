@@ -87,3 +87,19 @@ async def get_all_sensor_data(request: Request):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
+    
+@router.post('/slider')
+async def post_data(request: Request):
+    uid = request.state.user_id
+    data = await request.json()
+    CustomLogger().get_logger().info(f"Received slider data: {data}")
+
+    if 'slider_value' not in data:
+        raise HTTPException(status_code=400, detail="Invalid slider data")
+
+    try:
+        IOTService()._send_slider_data(uid, data['slider_value'])
+        return JSONResponse(content={"message": "Slider value sent successfully"}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error")
+    

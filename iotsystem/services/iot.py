@@ -102,10 +102,17 @@ class IOTSystem:
                 await asyncio.sleep(5)
 
     def message(self, client, feed_id, payload):
-        # print("Received:", payload)
         CustomLogger().get_logger().info(f"Received: {payload}")
         if self.writer:
             self.writer.write(f"!{feed_id}:{payload}#".encode())
+
+    async def sendSerial(self, uid):
+        """Sends data to the serial device."""
+        if self.writer:
+                self.writer.write(f"!:#".encode())
+                # print(f"Sent: {data}")
+                CustomLogger().get_logger().info(f"Sent: ")
+
 
     @staticmethod
     def getPort():
