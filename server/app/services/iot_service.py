@@ -33,7 +33,7 @@ class IOTService:
         data = Database()._instance.get_env_sensor_collection().find(
             {self.FIELD_UID: uid},
             sort=[(self.FIELD_TIMESTAMP, -1)],
-            limit=50
+            limit=20
         )
         data = list(data)
         for doc in data:

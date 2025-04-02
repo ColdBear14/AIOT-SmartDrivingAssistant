@@ -22,6 +22,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.url.path in self.whitelist:
             CustomLogger().get_logger().info(f"AuthMiddleware: Skip authentication for {request.url.path}")
             return await call_next(request)
+        
+        elif request.method == "OPTIONS":
+            return await call_next(request)
 
         # Check for session token in cookies
         session_id = request.cookies.get("session_id")
@@ -63,7 +66,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 )
             
             response = await call_next(request)
-            response = AuthService()._add_cookie(response, new_session_id)
+            response = AuthService()._add_cookie_session(response, new_session_id)
             return response
 
         return await call_next(request)
