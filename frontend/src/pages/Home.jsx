@@ -48,15 +48,6 @@ const Home = () => {
 
       sensorList.forEach(sensor => {
         const value = parseFloat(sensor.value);
-<<<<<<< HEAD
-        console.log("sensor.type: ", sensor.sensor_type, "value: ", value);
-        switch(sensor.sensor_type) {
-          case ' dis':
-            newData.distance = value;
-            break;
-          case ' temp':
-            newData.temperature = value;
-=======
         let type = sensor.sensor_type.toString().toLowerCase().replace(/\s+|\W+/g, '');
 
         switch(type) {
@@ -65,7 +56,6 @@ const Home = () => {
               ...prevData,
               temperature: value,
             }));
->>>>>>> 00dbd6a2aaacab1aec3b04382d501f74d8a91254
             break;
 
           case 'humid':
@@ -74,17 +64,12 @@ const Home = () => {
               humidity: value,
             }));
             break;
-<<<<<<< HEAD
-          case ' lux':
-            newData.lightLevel = value;
-=======
 
           case 'dis':
             setData((prevData) => ({
               ...prevData,
               distance: value,
             }));
->>>>>>> 00dbd6a2aaacab1aec3b04382d501f74d8a91254
             break;
 
           case 'lux':
@@ -128,38 +113,35 @@ const Home = () => {
   // Compute the warning dynamically based on the current distance
   const distanceWarning = getDistanceWarning(data.distance);
 
-<<<<<<< HEAD
   const [sliderValue, setSliderValue] = useState([0, 0]);
   const [sliderValue2, setSliderValue2] = useState([0, 0]);
 
-  const handleSlider1Change = debounce(async (value) => {
-    setSliderValue1(value);
-    try {
-      const response = await axios.post('http://127.0.0.1:8000/iot/slider1', {
-        min: value[0],
-        max: value[1],
-      });
-      console.log('Slider 1 API Response:', response.data);
-    } catch (error) {
-      console.error('Slider 1 Error:', error);
-    }
-  }, 300); // Gửi API sau 300ms kể từ lần thay đổi cuối cùng
+  // const handleSlider1Change = debounce(async (value) => {
+  //   setSliderValue1(value);
+  //   try {
+  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
+  //       min: value[0],
+  //       max: value[1],
+  //     });
+  //     console.log('Slider 1 API Response:', response.data);
+  //   } catch (error) {
+  //     console.error('Slider 1 Error:', error);
+  //   }
+  // }, 300); // Gửi API sau 300ms kể từ lần thay đổi cuối cùng
 
-  const handleSlider2Change = debounce(async (value) => {
-    setSliderValue2(value);
-    try {
-      const response = await axios.post('http://127.0.0.1:8000/iot/slider2', {
-        min: value[0],
-        max: value[1],
-      });
-      console.log('Slider 2 API Response:', response.data);
-    } catch (error) {
-      console.error('Slider 2 Error:', error);
-    }
-  }, 300);
+  // const handleSlider2Change = debounce(async (value) => {
+  //   setSliderValue2(value);
+  //   try {
+  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
+  //       min: value[0],
+  //       max: value[1],
+  //     });
+  //     console.log('Slider 2 API Response:', response.data);
+  //   } catch (error) {
+  //     console.error('Slider 2 Error:', error);
+  //   }
+  // }, 300);
 
-=======
->>>>>>> 00dbd6a2aaacab1aec3b04382d501f74d8a91254
   return (
     <>
       <div className='row'>

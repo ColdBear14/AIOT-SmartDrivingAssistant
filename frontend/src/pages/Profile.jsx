@@ -26,7 +26,7 @@ function Profile() {
 
   useEffect(() => {
     axios.defaults.withCredentials = true;
-    axios.get(`${import.meta.env.VITE_SERVER_URL}/user`,
+    axios.get(`${import.meta.env.VITE_SERVER_URL}/user/`,
       {
         withCredentials: true,
         headers: {
