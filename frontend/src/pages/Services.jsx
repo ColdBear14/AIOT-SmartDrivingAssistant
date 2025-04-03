@@ -2,27 +2,22 @@ import React from 'react';
 import styles from '../components/Home/Services.module.css';
 import { useContext } from 'react';
 import { UserContext } from '../hooks/UserContext.jsx';
-import axios from 'axios';
 
 function Services() {
   const { servicesState, setServicesState } = useContext(UserContext);
 
-  const handleToggleChange = async (service, value) => {
-    const newState = { ...servicesState, [service]: value };
-    setServicesState(newState);
+  // Kiểm tra an toàn để tránh lỗi undefined
+  const safeServicesState = servicesState || {
+    distance: true,
+    temperature: true,
+    driver: true,
+    slope: true,
+    headlight: true,
+  };
 
-    // Gửi trạng thái mới về backend
-    try {
-      await axios.post(`${import.meta.env.VITE_SERVER_URL}/services/update`, newState, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('Services state updated on backend:', newState);
-    } catch (error) {
-      console.error('Error updating services state:', error);
-    }
+  const handleToggleChange = (service, value) => {
+    const newState = { ...safeServicesState, [service]: value };
+    setServicesState(newState);
   };
 
   return (
@@ -37,8 +32,8 @@ function Services() {
             type="checkbox"
             className="form-check-input"
             id="distanceToggle"
-            checked={servicesState.distance}
-            onChange={() => handleToggleChange('distance', !servicesState.distance)}
+            checked={safeServicesState.distance}
+            onChange={() => handleToggleChange('distance', !safeServicesState.distance)}
           />
         </div>
         <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
@@ -50,8 +45,8 @@ function Services() {
             type="checkbox"
             className="form-check-input"
             id="temperatureToggle"
-            checked={servicesState.temperature}
-            onChange={() => handleToggleChange('temperature', !servicesState.temperature)}
+            checked={safeServicesState.temperature}
+            onChange={() => handleToggleChange('temperature', !safeServicesState.temperature)}
           />
         </div>
       </div>
@@ -65,8 +60,8 @@ function Services() {
             type="checkbox"
             className="form-check-input"
             id="driverToggle"
-            checked={servicesState.driver}
-            onChange={() => handleToggleChange('driver', !servicesState.driver)}
+            checked={safeServicesState.driver}
+            onChange={() => handleToggleChange('driver', !safeServicesState.driver)}
           />
         </div>
         <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
@@ -78,8 +73,8 @@ function Services() {
             type="checkbox"
             className="form-check-input"
             id="slopeToggle"
-            checked={servicesState.slope}
-            onChange={() => handleToggleChange('slope', !servicesState.slope)}
+            checked={safeServicesState.slope}
+            onChange={() => handleToggleChange('slope', !safeServicesState.slope)}
           />
         </div>
       </div>
@@ -93,8 +88,8 @@ function Services() {
             type="checkbox"
             className="form-check-input"
             id="headlightToggle"
-            checked={servicesState.headlight}
-            onChange={() => handleToggleChange('headlight', !servicesState.headlight)}
+            checked={safeServicesState.headlight}
+            onChange={() => handleToggleChange('headlight', !safeServicesState.headlight)}
           />
         </div>
       </div>

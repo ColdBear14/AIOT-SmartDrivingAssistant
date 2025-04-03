@@ -20,6 +20,15 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Kiểm tra an toàn để tránh lỗi undefined
+  const safeServicesState = servicesState || {
+    distance: true,
+    temperature: true,
+    driver: true,
+    slope: true,
+    headlight: true,
+  };
+
   const handleGetData = async () => {
     setLoading(true);
     setError(null);
@@ -74,7 +83,7 @@ const Home = () => {
   return (
     <>
       <div className='row'>
-        {servicesState.temperature && (
+        {safeServicesState.temperature && (
           <div className="col-md mb-3">
             <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
               <h4 className="mb-2">Air conditioning</h4>
@@ -98,7 +107,7 @@ const Home = () => {
           </div>
         )}
 
-        {servicesState.driver && (
+        {safeServicesState.driver && (
           <div className="col-md mb-3">
             <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
               <h4 className="mb-2">Driver monitoring</h4>
@@ -128,9 +137,9 @@ const Home = () => {
           </div>
         )}
 
-        {(servicesState.distance || servicesState.slope) && (
+        {(safeServicesState.distance || safeServicesState.slope) && (
           <div className="col-md col-md-4 mb-3">
-            {servicesState.distance && (
+            {safeServicesState.distance && (
               <div className="p-4 mb-3 shadow bg-white rounded">
                 <h4 className="mb-1">Distance Sensor</h4>
                 <div className="d-flex justify-content-between align-items-center">
@@ -146,7 +155,7 @@ const Home = () => {
                 </div>
               </div>
             )}
-            {servicesState.slope && (
+            {safeServicesState.slope && (
               <div className="p-4 mb-3 shadow bg-white rounded">
                 <h4 className="mb-1">Slope Detection</h4>
                 <p className="fw-bold fs-2 mb-1">{data.incline?.toFixed(1)}°</p>
@@ -157,7 +166,7 @@ const Home = () => {
         )}
       </div>
 
-      {servicesState.headlight && (
+      {safeServicesState.headlight && (
         <div className='row'>
           <div className='col-md col-md-6 mb-3'>
             <div className="p-4 shadow bg-white rounded">

@@ -1,33 +1,27 @@
 import { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [sessionId, setSessionId] = useState(null);
   const [sensorData, setSensorData] = useState([]);
-  const [servicesState, setServicesState] = useState({
-    distance: true,
-    temperature: true,
-    driver: true,
-    slope: true,
-    headlight: true,
+
+  // Khởi tạo servicesState từ localStorage hoặc giá trị mặc định
+  const [servicesState, setServicesState] = useState(() => {
+    const savedState = localStorage.getItem('servicesState');
+    return savedState ? JSON.parse(savedState) : {
+      distance: true,
+      temperature: true,
+      driver: true,
+      slope: true,
+      headlight: true,
+    };
   });
 
+  // Lưu servicesState vào localStorage mỗi khi nó thay đổi
   useEffect(() => {
-    const fetchServicesState = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/services/state`, {
-          withCredentials: true,
-          headers: { 'Content-Type': 'application/json' },
-        });
-        setServicesState(response.data);
-      } catch (error) {
-        console.error('Error fetching services state:', error);
-      }
-    };
-    fetchServicesState();
-  }, []);
+    localStorage.setItem('servicesState', JSON.stringify(servicesState));
+  }, [servicesState]);
 
   return (
     <UserContext.Provider value={{ sessionId, setSessionId, sensorData, setSensorData, servicesState, setServicesState }}>
