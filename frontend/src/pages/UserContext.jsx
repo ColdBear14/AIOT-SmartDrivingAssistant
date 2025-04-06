@@ -1,0 +1,31 @@
+import { createContext, useState, useEffect } from 'react';
+
+export const UserContext = createContext();
+
+export const UserProvider = ({ children }) => {
+  const [sessionId, setSessionId] = useState(null);
+  const [sensorData, setSensorData] = useState([]);
+
+  // Khởi tạo servicesState từ localStorage hoặc giá trị mặc định
+  const [servicesState, setServicesState] = useState(() => {
+    const savedState = localStorage.getItem('servicesState');
+    return savedState ? JSON.parse(savedState) : {
+      distance: true,
+      temperature: true,
+      driver: true,
+      slope: true,
+      headlight: true,
+    };
+  });
+
+  // Lưu servicesState vào localStorage mỗi khi nó thay đổi
+  useEffect(() => {
+    localStorage.setItem('servicesState', JSON.stringify(servicesState));
+  }, [servicesState]);
+
+  return (
+    <UserContext.Provider value={{ sessionId, setSessionId, sensorData, setSensorData, servicesState, setServicesState }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
