@@ -50,7 +50,7 @@ const Home = () => {
         const value = parseFloat(sensor.value);
         let type = sensor.sensor_type.toString().toLowerCase().replace(/\s+|\W+/g, '');
 
-        switch(type) {
+        switch (type) {
           case 'temp':
             setData((prevData) => ({
               ...prevData,
@@ -84,7 +84,7 @@ const Home = () => {
         }
       });
       setSensorData(sensorList);
-      
+
       console.log("Received data: ", sensorList);
     } catch (error) {
       setError(error.message);
@@ -95,7 +95,7 @@ const Home = () => {
 
   useEffect(() => {
     handleGetData();
-    
+
     const interval = setInterval(() => {
       handleGetData();
     }, 2000);
@@ -148,13 +148,19 @@ const Home = () => {
         <div className="col-md mb-3">
           <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
             <h4 className="mb-2">Air conditioning</h4>
-            <div className='mb-2'>
-              <p className='mb-1 small text-body-tertiary'>Temperature</p>
-              <p className="fw-bold fs-2 mb-1">{data.temperature?.toFixed(1)}°C</p>
-            </div>
-            <div className='mb-2'>
-              <p className='mb-1 small text-body-tertiary'>Humidity</p>
-              <p className="fw-bold fs-2 mb-1">{data.humidity?.toFixed(1)}%</p>
+            <div className="row">
+              <div className='col'>
+                <div className='mb-2'>
+                  <p className='mb-1 small text-body-tertiary'>Temperature</p>
+                  <p className="fw-bold fs-2 mb-1">{data.temperature?.toFixed(1)}°C</p>
+                </div>
+              </div>
+              <div className='col'>
+                <div className='mb-2'>
+                  <p className='mb-1 small text-body-tertiary'>Humidity</p>
+                  <p className="fw-bold fs-2 mb-1">{data.humidity?.toFixed(1)}%</p>
+                </div>
+              </div>
             </div>
             <div className='mb-2'>
               <p className='mb-2 small text-body-tertiary'>Air conditioning</p>
@@ -163,12 +169,12 @@ const Home = () => {
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
               </div>
-              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValue} step={20} onInput={(value) => setSliderValue(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning" value={sliderValue} step={20} onInput={(value) => setSliderValue(value)} thumbsDisabled={[true, false]} rangeSlideDisabled={true} />
               <p>Current Value: {sliderValue[1]}</p>
             </div>
           </div>
         </div>
-        
+
         <div className="col-md mb-3">
           <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
             <h4 className="mb-2">Driver monitoring</h4>
@@ -219,8 +225,8 @@ const Home = () => {
               </div>
             </div>
           </div>
-          <div className="p-4 mb-3 shadow bg-white rounded">
-            <h4 className="mb-1">Slope Detection</h4>
+          <div className="p-4 mb-0 shadow bg-white rounded">
+            <h4 className="mb-0">Slope Detection</h4>
             <p className="fw-bold fs-2 mb-1">{data.incline?.toFixed(1)}°</p>
             <p className='mb-0 small text-body-tertiary'>Flat terrain</p>
           </div>
@@ -248,7 +254,7 @@ const Home = () => {
                   <button className={`rounded btn text-white ${data.headlightsMode === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                   <button className={`rounded btn text-white ${data.headlightsMode === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
                 </div>
-                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValue2} max={4} onInput={(value) => setSliderValue2(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+                <div className="title">Headlight </div><RangeSlider className="Headlight" value={sliderValue2} max={4} onInput={(value) => setSliderValue2(value)} thumbsDisabled={[true, false]} rangeSlideDisabled={true} />
                 <p>Current Value: {sliderValue2[1]}</p>
               </div>
             </div>
