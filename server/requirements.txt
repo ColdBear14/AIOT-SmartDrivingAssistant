@@ -1,5 +1,7 @@
 pymongo
 asyncio
+opencv-python
+mediapipe
 python-dotenv
 fastapi
 uvicorn

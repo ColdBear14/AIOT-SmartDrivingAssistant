@@ -19,6 +19,7 @@
     "dotenv": "^16.4.7",
     "js-cookie": "^3.0.5",
     "lodash.debounce": "^4.0.8",
+    "my-react-app": "file:",
     "normalize.css": "^8.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
