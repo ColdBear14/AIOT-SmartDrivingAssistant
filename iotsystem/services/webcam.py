@@ -1,6 +1,8 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from dotenv import load_dotenv
+load_dotenv()
 
 import cv2
 import numpy as np
@@ -121,7 +123,7 @@ class VideoCam:
                 cv2.imshow('Driver Monitor',processed_frame[:,:,::-1])
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
-                
+            # print("Frame processed.")    
             time.sleep(0.01)
             
         cam.release()

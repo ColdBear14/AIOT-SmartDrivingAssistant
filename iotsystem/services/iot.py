@@ -10,7 +10,7 @@ from Adafruit_IO import MQTTClient
 from services.database import Database
 import serial.tools.list_ports
 
-from webcam import VideoCam
+from services.webcam import VideoCam
 
 WAIT_TIME = 5.0
 EAR_THRESHOLD = 0.25 
@@ -202,13 +202,14 @@ class IOTSystem:
             self.running = True
             # asyncio.create_task(self.readSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
+            
             asyncio.create_task(self.start_webcam(uid))
             CustomLogger().get_logger().info("Webcam System started.")
         else:
             # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")
 
-    def stop_system(self):
+    async def stop_system(self):
         self.running = False
         self.videocam.stop()
         # print("IOT System stopped.")
