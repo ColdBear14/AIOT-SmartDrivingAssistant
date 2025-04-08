@@ -88,18 +88,50 @@ async def get_all_sensor_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
     
-@router.post('/slider')
-async def post_data(request: Request):
+@router.post('/slider1')
+async def post_slider1_data(request: Request):
     uid = request.state.user_id
     data = await request.json()
-    CustomLogger().get_logger().info(f"Received slider data: {data}")
 
-    if 'slider_value' not in data:
-        raise HTTPException(status_code=400, detail="Invalid slider data")
+    CustomLogger().get_logger().info(f"Received slider1 data: {data}")
+
+    slider_data = {
+        "uid": str(uid),
+        "device_type": "headlight",
+        "value": float(data["max"]),
+    }
+
+    if 'min' not in data or 'max' not in data:
+        raise HTTPException(status_code=400, detail="Invalid slider2 data")
 
     try:
-        IOTService()._send_slider_data(uid, data['slider_value'])
-        return JSONResponse(content={"message": "Slider value sent successfully"}, status_code=200)
+        # Assuming _send_slider_data can handle min and max values
+        IOTService()._send_slider_data(uid, slider_data)
+        return JSONResponse(content={"message": "Slider1 values sent successfully"}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.post('/slider2')
+async def post_slider2_data(response: JSONResponse, request: Request):
+    uid = request.state.user_id
+    data = await request.json()
+
+    CustomLogger().get_logger().info(f"Received slider2 data: {data}")
+
+    slider_data = {
+        "uid": str(uid),
+        "device_type": "airconditioner",
+        "value": float(data["max"]),
+    }
+
+    if 'min' not in data or 'max' not in data:
+        raise HTTPException(status_code=400, detail="Invalid slider2 data")
+
+    try:
+        # Assuming _send_slider_data can handle min and max values
+        IOTService()._send_slider_data(uid, slider_data)
+        return JSONResponse(content={"message": "Slider2 values sent successfully"}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
     

@@ -1,5 +1,6 @@
 from services.database import Database
 from models.request import SensorRequest
+from datetime import datetime
 
 class IOTService:
     FIELD_UID = "uid"
@@ -43,5 +44,10 @@ class IOTService:
     
     def _send_slider_data(self, uid: str = None, slider_value: str = None):
         """
-        Send slider data to the serial port.
+        Send slider data to database.
         """
+
+
+        # Send data to database
+        Database()._instance._add_doc_with_timestamp('device_control', slider_value)
+

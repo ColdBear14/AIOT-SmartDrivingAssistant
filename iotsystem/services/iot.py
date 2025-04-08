@@ -14,6 +14,10 @@ class IOTSystem:
     _instance = None
 
     __AIO_FEED_ID = ['led', 'fan']
+    FIELD_UID = "uid"
+    FIELD_DEVICE_TYPE = "device_type"
+    FIELD_TIMESTAMP = "timestamp"
+    FIELD_VAL = "val"
 
     def __new__(cls, config=None):
         if not cls._instance:
@@ -108,10 +112,20 @@ class IOTSystem:
 
     async def sendSerial(self, uid):
         """Sends data to the serial device."""
+        
+        data = Database()._instance.get_device_collection().find(
+            {self.FIELD_UID: uid},
+            sort=[(self.FIELD_TIMESTAMP, -1)],
+            limit=1
+        )
+        CustomLogger().get_logger().info(f"Data retrieved: {data}")
+
+        feed = data["device_type"]
+        payload = data["value"]
+
         if self.writer:
-                self.writer.write(f"!:#".encode())
-                # print(f"Sent: {data}")
-                CustomLogger().get_logger().info(f"Sent: ")
+                self.writer.write(f"!{feed}:{payload}#".encode())
+                CustomLogger().get_logger().info(f"Sent: !{feed}:{payload}#")
 
 
     @staticmethod
@@ -155,8 +169,8 @@ class IOTSystem:
             "lux": "bright",
             "dis": "distance"
         }
-        if sensor_type in sensor_map:
-            self.client.publish(sensor_map[sensor_type], value)
+        # if sensor_type in sensor_map:
+        #     self.client.publish(sensor_map[sensor_type], value)
 
         try:
             doc: dict = {
@@ -174,6 +188,7 @@ class IOTSystem:
         if not self.running:
             self.running = True
             asyncio.create_task(self.readSerial(uid))
+            asyncio.create_task(self.sendSerial(uid))
             # print("IOT System started.")
             CustomLogger().get_logger().info("IOT System started.")
         else:

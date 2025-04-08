@@ -98,7 +98,7 @@ const Home = () => {
     
     const interval = setInterval(() => {
       handleGetData();
-    }, 2000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, []);
@@ -113,34 +113,46 @@ const Home = () => {
   // Compute the warning dynamically based on the current distance
   const distanceWarning = getDistanceWarning(data.distance);
 
-  const [sliderValue, setSliderValue] = useState([0, 0]);
+  const [sliderValue, setSliderValue1] = useState([0, 0]);
   const [sliderValue2, setSliderValue2] = useState([0, 0]);
 
-  // const handleSlider1Change = debounce(async (value) => {
-  //   setSliderValue1(value);
-  //   try {
-  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
-  //       min: value[0],
-  //       max: value[1],
-  //     });
-  //     console.log('Slider 1 API Response:', response.data);
-  //   } catch (error) {
-  //     console.error('Slider 1 Error:', error);
-  //   }
-  // }, 300); // Gửi API sau 300ms kể từ lần thay đổi cuối cùng
+  const handleSlider1Change = debounce(async (value) => {
+    console.log('Slider1 value changed:', value); // Debug log
+    setSliderValue1(value);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
+        min: value[0],
+        max: value[1],
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Slider 1 API Response:', response.data);
+    } catch (error) {
+      console.error('Slider 1 Error:', error.response?.data || error.message);
+    }
+  }, 300);
 
-  // const handleSlider2Change = debounce(async (value) => {
-  //   setSliderValue2(value);
-  //   try {
-  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
-  //       min: value[0],
-  //       max: value[1],
-  //     });
-  //     console.log('Slider 2 API Response:', response.data);
-  //   } catch (error) {
-  //     console.error('Slider 2 Error:', error);
-  //   }
-  // }, 300);
+  const handleSlider2Change = debounce(async (value) => {
+    console.log('Slider2 value changed:', value); // Debug log
+    setSliderValue2(value);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
+        min: value[0],
+        max: value[1],
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Slider 2 API Response:', response.data);
+    } catch (error) {
+      console.error('Slider 2 Error:', error.response?.data || error.message);
+    }
+  }, 300);
 
   return (
     <>
@@ -163,7 +175,7 @@ const Home = () => {
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
               </div>
-              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValue} step={20} onInput={(value) => setSliderValue(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValue} step={20} onInput={(value) => handleSlider1Change(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
               <p>Current Value: {sliderValue[1]}</p>
             </div>
           </div>
@@ -248,7 +260,7 @@ const Home = () => {
                   <button className={`rounded btn text-white ${data.headlightsMode === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                   <button className={`rounded btn text-white ${data.headlightsMode === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
                 </div>
-                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValue2} max={4} onInput={(value) => setSliderValue2(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValue2} max={4} onInput={(value) => handleSlider2Change(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
                 <p>Current Value: {sliderValue2[1]}</p>
               </div>
             </div>

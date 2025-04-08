@@ -77,6 +77,11 @@ class Database:
         return self.get_sensor_collection().find_one({'_id': id})
 # End sensor region
 
+# Device region
+    def get_device_collection(self):
+        return self.db.get_collection('device_control')
+# End device region
+
 if __name__ == '__main__':
     def test():
         CustomLogger().get_logger().info("Database: Test mode.")
