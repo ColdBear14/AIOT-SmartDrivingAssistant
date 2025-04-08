@@ -40,3 +40,8 @@ class IOTService:
             doc["_id"] = str(doc["_id"])
 
         return list(data)  # Convert cursor to list for easier handling
+    
+    def _send_slider_data(self, uid: str = None, slider_value: str = None):
+        """
+        Send slider data to the serial port.
+        """
