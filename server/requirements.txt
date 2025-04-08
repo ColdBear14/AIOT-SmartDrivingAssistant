@@ -12,3 +12,4 @@ Adafruit_IO
 datetime
 rich
 httpx
+python-multipart

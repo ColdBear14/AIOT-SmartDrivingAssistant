@@ -1,8 +1,8 @@
-from bson import ObjectId
 from utils.custom_logger import CustomLogger
 
 from pymongo import MongoClient
 from datetime import datetime
+import gridfs
 
 class Database:
     FIELD_MONGO_URL = "mongo_url"
@@ -37,7 +37,7 @@ class Database:
             self.db = self.client['test']
         else:
             self.db = self.client[config[self.FIELD_DB_NAME]]
-        self.collections = set()
+            self.fs = gridfs.GridFS(self.db, os.getenv("MONGOBD_AVATAR_COL"))
 
     def _add_doc_with_timestamp(self, collection_name: str=None, document: dict=None):
         '''Add new document to collection with timestamp'''

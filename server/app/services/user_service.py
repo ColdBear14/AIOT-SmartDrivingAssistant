@@ -4,6 +4,7 @@ from services.database import Database
 
 from models.request import UserConfigRequest, UserInfoRequest
 from models.mongo_doc import UserDocument, UserConfigDocument
+from gridfs import GridOut
 
 class UserService:
     def _get_object_id(self, uid: str = None) -> ObjectId:
@@ -24,7 +25,7 @@ class UserService:
             init_data[field] = ""
 
         init_data[UserDocument.FIELD_USERNAME] = username
-        init_data[UserDocument.FILED_PASSWORD] = hashed_password
+        init_data[UserDocument.FIELD_PASSWORD] = hashed_password
         init_data[UserDocument.FIELD_AVATAR] = ""
 
         init_config_data = {}
@@ -99,23 +100,68 @@ class UserService:
         finally:
             session.end_session()
 
-    def _get_avatar(self, uid: str = None):
+    def _get_avatar(self, uid: str = None) -> GridOut:
         '''
             Get user avatar from the database by user id string.
         '''
-        pass
+        user = Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
+        if not user:
+            raise Exception("User not find")
+        
+        if not user[UserDocument.FIELD_AVATAR] or user[UserDocument.FIELD_AVATAR] == "":
+            raise Exception("No avatar found")
+        
+        file = Database()._instance.fs.get(ObjectId(user[UserDocument.FIELD_AVATAR]))
 
-    def _update_avatar(self, uid: str = None, avatar: any = None):
+        if not file:
+            raise Exception("Can not get file")
+        
+        return file
+
+    async def _update_avatar(self, uid: str = None, file: any = None) -> dict:
         '''
             Update user avatar in the database by user id string and avatar file.
         '''
-        pass
+        user = Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
+
+        if not user:
+            raise Exception("User not find")
+        
+        if user[UserDocument.FIELD_AVATAR] and user[UserDocument.FIELD_AVATAR] != "":
+            Database()._instance.fs.delete(ObjectId(user[UserDocument.FIELD_AVATAR]))
+
+        contents = await file.read()
+        file_id = Database()._instance.fs.put(
+            contents,
+            filename=file.filename,
+            content_type=file.content_type
+            )
+
+        Database()._instance.get_user_collection().update_one({'_id': self._get_object_id(uid)}, {'$set': {'avatar': file_id}})
+
+        return {
+            "file_id": str(file_id),
+            "file_name": file.filename,
+            "file_type": file.content_type,
+            "file_size": len(contents)
+        }
+    
 
     def _delete_avatar(self, uid: str = None):
         '''
             Delete user avatar from the database by user id string.
         '''
-        pass
+        user = Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
+
+        if not user:
+            raise Exception("User not find")
+        
+        if not user[UserDocument.FIELD_AVATAR] or user[UserDocument.FIELD_AVATAR] == "":
+            raise Exception("No avatar found")
+        
+        Database()._instance.fs.delete(ObjectId(user[UserDocument.FIELD_AVATAR]))
+
+        Database()._instance.get_user_collection().update_one({'_id': self._get_object_id(uid)}, {'$set': {'avatar': ""}})
 
     def _get_user_config(self, uid: str = None):
         '''
