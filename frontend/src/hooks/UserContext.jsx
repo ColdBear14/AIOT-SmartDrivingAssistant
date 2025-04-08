@@ -1,5 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 
+import { IOTServices } from '../utils/IOTServices.jsx';
+
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
@@ -10,13 +12,9 @@ export const UserProvider = ({ children }) => {
   // Khởi tạo servicesState từ localStorage hoặc giá trị mặc định
   const [servicesState, setServicesState] = useState(() => {
     const savedState = localStorage.getItem('servicesState');
-    return savedState ? JSON.parse(savedState) : {
-      distance: true,
-      temperature: true,
-      driver: true,
-      slope: true,
-      headlight: true,
-    };
+    return savedState ? JSON.parse(savedState) : Object.fromEntries(
+      Object.keys(IOTServices).map(key => [key, true])
+    );
   });
 
   // Lưu servicesState vào localStorage mỗi khi nó thay đổi

@@ -7,9 +7,12 @@ import gridfs
 class Database:
     FIELD_MONGO_URL = "mongo_url"
     FIELD_DB_NAME = "db_name"
+    
     FIELD_USER_COLLECTION = "user"
-    FIELD_ENV_SENSOR_COLLECTION = "environment_sensor"
     FIELD_USER_CONFIG_COLLECTION = "user_config"
+    FIELD_ENV_SENSOR_COLLECTION = "environment_sensor"
+    FIELD_SERVICE_CONFIG_COLLECTION = "service_config"
+
     _instance = None
     _cache_data = {}
 
@@ -62,6 +65,9 @@ class Database:
 # IOT region
     def get_env_sensor_collection(self):
         return self.db.get_collection(self.FIELD_ENV_SENSOR_COLLECTION)
+    
+    def get_service_config_collection(self):
+        return self.db.get_collection(self.FIELD_SERVICE_CONFIG_COLLECTION)
 # End IOT region
 
 if __name__ == '__main__':

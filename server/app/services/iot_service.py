@@ -1,5 +1,6 @@
 from services.database import Database
-from models.request import SensorRequest
+from models.request import ControlServiceRequest, SensorDataRequest, ServiceConfigRequest
+from models.mongo_doc import ServiceConfigDocument
 
 class IOTService:
     FIELD_UID = "uid"
@@ -7,40 +8,87 @@ class IOTService:
     FIELD_TIMESTAMP = "timestamp"
     FIELD_VAL = "val"
 
-    def _get_sensor_data(self, uid: str = None, request: SensorRequest = None):
-        """
-        Fetch sensor data for a specific user and sensor type, limited by the amount requested.
-        """
-        sensor_type = request.sensor_type
-        amt = request.amt
+    def _create_init_service_config_data(self, uid: str = None):
+        init_service_config_data = {}
 
-        # Query updated to access nested fields in 'metadata'
-        data = Database()._instance.get_env_sensor_collection().find(
+        init_service_config_data[ServiceConfigDocument.FIELD_UID] = uid if uid else ""
+
+        for field in ServiceConfigDocument.ALL_SEVICE_FIELDS:
+            init_service_config_data[field] = "off"
+
+        for field in ServiceConfigDocument.ALL_VALUE_FIELDS:
+            init_service_config_data[field] = 0
+
+        return init_service_config_data
+
+    def _get_newest_sensor_data(self, uid: str = None, sensor_type: str = None) -> dict:
+        """
+        Get the newest sensor data for a specific user and sensor type.
+        """
+        data = Database()._instance.get_env_sensor_collection().find_one(
             {
                 self.FIELD_UID: uid,
                 self.FIELD_SENSOR_TYPE: sensor_type
             },
-            limit=amt,
             sort=[(self.FIELD_TIMESTAMP, -1)]  # Sort by timestamp in descending order
         )
-        return list(data)  # Convert cursor to list for easier handling
 
-    def _get_all_sensors_data(self, uid: str = None):
-        """
-        Fetch all sensor data for a specific user.
-        """
-        # Query updated to access nested 'uid' field in 'metadata'
-        data = Database()._instance.get_env_sensor_collection().find(
-            {self.FIELD_UID: uid},
-            sort=[(self.FIELD_TIMESTAMP, -1)],
-            limit=20
-        )
-        data = list(data)
-        for doc in data:
-            doc["_id"] = str(doc["_id"])
+        if data and data['_id']:
+            data['_id'] = str(data['_id'])
 
-        return list(data)  # Convert cursor to list for easier handling
+        return data
+
+    def _get_sensor_data(self, uid: str = None, request: SensorDataRequest = None) -> list:
+        """
+        Get the newest sensor data for a specific user and multiple sensor types.
+        """
+        sensor_types = request.sensor_types
+
+        data = []
+        for sensor_type in sensor_types:
+            newest_data = self._get_newest_sensor_data(uid, sensor_type)
+            if newest_data:
+                data.append(newest_data)
+
+        if data.__len__() == 0:
+            raise Exception("No data found")
+
+        return data
     
+    def _get_service_config(self, uid: str = None):
+        '''
+            Get user config from the database by user id string.
+        '''
+        user_config = Database()._instance.get_service_config_collection().find_one({'uid': uid})
+        
+        if not user_config:
+            raise Exception("Service config not find")
+        
+        data = {}
+        for key in ServiceConfigDocument.ALL_SEVICE_FIELDS:
+            data[key] = user_config[key]
+
+        for key in ServiceConfigDocument.ALL_VALUE_FIELDS:
+            data[key] = user_config[key]
+
+        return data
+
+    def _update_service_config(self, uid: str = None, user_config_request: ServiceConfigRequest = None):
+        '''
+            Update user config in the database by user id string and UserConfigRequest object.
+        '''
+        update_data = user_config_request.dict(exclude_unset=True)
+
+        if update_data == {}:
+            raise Exception("No data to update")
+        
+        result = Database()._instance.get_service_config_collection().update_one(
+            {'uid': uid},
+            {'$set': update_data}
+        )
+        if result.modified_count == 0:
+            raise Exception("No service config updated")
+
     def _send_slider_data(self, uid: str = None, slider_value: str = None):
         """
         Send slider data to the serial port.

@@ -1,6 +1,6 @@
 from utils.custom_logger import CustomLogger
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Request, Response
 from starlette.responses import JSONResponse
 
 from pymongo.errors import PyMongoError
@@ -13,9 +13,6 @@ router = APIRouter()
 
 @router.post("/register")
 async def register(user: UserRequest):
-    if not user or not user.username or not user.password:
-        raise HTTPException(status_code=400, detail="Invalid request")
-    
     try:
         result = AuthService()._register(user)
         CustomLogger().get_logger().info(f"Register result: {result}")
@@ -26,21 +23,31 @@ async def register(user: UserRequest):
                 status_code=201
             )
         else:
-            raise HTTPException(status_code=500, detail="Result invalid")
+            return JSONResponse(
+                content={"message": "User not created"},
+                status_code=500
+            )
 
     except Exception as e:
         if e.__class__ == PyMongoError:
-            raise HTTPException(status_code=500, detail="Can not operate database transaction")
+            # raise HTTPException(status_code=500, detail="Can not operate database transaction")
+            return JSONResponse(
+                content={"message": "Can not operate database transaction"},
+                status_code=500
+            )
         elif e.args[0] == "Username already exists":
-            raise HTTPException(status_code=400, detail="Username already exists")
+            return JSONResponse(
+                content={"message": "Username already exists"},
+                status_code=409
+            )
         else:
-            raise HTTPException(status_code=500, detail="Internal server error")
+            return JSONResponse(
+                content={"message": "Internal server error ", "detail": e.args[0]},
+                status_code=500
+            )
 
 @router.patch("/login")
 async def login(user: UserRequest, response: Response):
-    if not user.username or not user.password:
-        raise HTTPException(status_code=400, detail="Invalid request")
-
     try:
         session_id, userid = AuthService()._authenticate(user)
         CustomLogger().get_logger().info(f"Login result: {session_id} - {userid}")
@@ -54,19 +61,31 @@ async def login(user: UserRequest, response: Response):
             
             return response
         else:
-            raise HTTPException(status_code=500, detail="Internal server error")
+            return JSONResponse(
+                content={"message": "Failed to create session"},
+                status_code=401
+            )
 
     except Exception as e:
         if e.args[0] == "Invalid credentials":
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            return JSONResponse(
+                content={"message": "Invalid credentials"},
+                status_code=401
+            )
         else:
-            raise HTTPException(status_code=500, detail="Internal server error")
+            return JSONResponse(
+                content={"message": "Internal server error ", "detail": e.args[0]},
+                status_code=500
+            )
 
 @router.patch("/logout")
 async def logout(request: Request, response: Response):
     session_id = request.cookies.get("session_id")
     if not session_id:
-        raise HTTPException(status_code=400, detail="No active session found")
+        return JSONResponse(
+            content={"message": "Unauthorized: Missing session token"},
+            status_code=401
+        )
 
     try:
         result = AuthService()._del_session(session_id)
@@ -81,8 +100,14 @@ async def logout(request: Request, response: Response):
 
             return response
         else:
-            raise HTTPException(status_code=500, detail="Session not found")
+            return JSONResponse(
+                content={"message": "Failed to delete session"},
+                status_code=500
+            )
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal server error")
+        return JSONResponse(
+            content={"message": "Internal server error ", "detail": e.args[0]},
+            status_code=500
+        )
 

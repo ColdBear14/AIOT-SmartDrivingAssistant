@@ -5,12 +5,13 @@ from passlib.context import CryptContext
 import secrets
 
 from pymongo.errors import PyMongoError
+from services.iot_service import IOTService
 from services.database import Database
 
 from services.user_service import UserService
 
 from models.request import UserRequest
-from models.mongo_doc import UserDocument, UserConfigDocument
+from models.mongo_doc import UserDocument, ServiceConfigDocument
 
 from datetime import datetime, timedelta
 # import redis
@@ -56,7 +57,7 @@ class AuthService:
         
         hashed_pw = self._hash_pw(user_request.password)
         
-        init_user_data, init_user_config_data = UserService()._create_init_user_data(user_request.username, hashed_pw)
+        init_user_data = UserService()._create_init_user_data(user_request.username, hashed_pw)
 
         session = Database()._instance.client.start_session()
         try:
@@ -65,17 +66,17 @@ class AuthService:
                     init_user_data,
                     session=session
                 )
+                
+                init_service_config_data = IOTService()._create_init_service_config_data(str(user_result.inserted_id))
 
-                init_user_config_data[UserConfigDocument.FIELD_UID] = str(user_result.inserted_id)
-
-                user_config_result = Database()._instance.get_user_config_collection().insert_one(
-                    init_user_config_data,
+                service_config_result = Database()._instance.get_service_config_collection().insert_one(
+                    init_service_config_data,
                     session=session
                 )
             
             return {
                 "user_doc_id": str(user_result.inserted_id),
-                "user_config_doc_id": str(user_config_result.inserted_id)
+                "service_config_doc_id": str(service_config_result.inserted_id)
             }
 
         except PyMongoError as e:

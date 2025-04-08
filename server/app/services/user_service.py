@@ -2,8 +2,8 @@ from bson import ObjectId
 
 from services.database import Database
 
-from models.request import UserConfigRequest, UserInfoRequest
-from models.mongo_doc import UserDocument, UserConfigDocument
+from models.request import UserInfoRequest
+from models.mongo_doc import UserDocument
 from gridfs import GridOut
 
 class UserService:
@@ -16,23 +16,19 @@ class UserService:
         except Exception as e:
             raise Exception("Invalid string to ObjectId conversion") from e
         
-    def _create_init_user_data(self, username: str = None, hashed_password: str = None) -> tuple[dict, dict]:
+    def _create_init_user_data(self, username: str = None, hashed_password: str = None):
         '''
             Create 2 dict for initial user's data and user config data for register operation.
         '''
-        init_data = {}
+        init_user_data = {}
         for field in UserDocument.ALL_BASIC_FIELDS:
-            init_data[field] = ""
+            init_user_data[field] = ""
 
-        init_data[UserDocument.FIELD_USERNAME] = username
-        init_data[UserDocument.FIELD_PASSWORD] = hashed_password
-        init_data[UserDocument.FIELD_AVATAR] = ""
+        init_user_data[UserDocument.FIELD_USERNAME] = username
+        init_user_data[UserDocument.FIELD_PASSWORD] = hashed_password
+        init_user_data[UserDocument.FIELD_AVATAR] = ""
 
-        init_config_data = {}
-        for field in UserConfigDocument.ALL_SEVICE_FIELDS:
-            init_config_data[field] = False
-
-        return (init_data, init_config_data)
+        return init_user_data
 
     def _get_user_info(self, uid: str = None) -> dict:
         '''
@@ -135,7 +131,7 @@ class UserService:
             contents,
             filename=file.filename,
             content_type=file.content_type
-            )
+        )
 
         Database()._instance.get_user_collection().update_one({'_id': self._get_object_id(uid)}, {'$set': {'avatar': file_id}})
 
@@ -162,34 +158,3 @@ class UserService:
         Database()._instance.fs.delete(ObjectId(user[UserDocument.FIELD_AVATAR]))
 
         Database()._instance.get_user_collection().update_one({'_id': self._get_object_id(uid)}, {'$set': {'avatar': ""}})
-
-    def _get_user_config(self, uid: str = None):
-        '''
-            Get user config from the database by user id string.
-        '''
-        user_config = Database()._instance.get_user_config_collection().find_one({'uid': uid})
-        
-        if not user_config:
-            raise Exception("User config not find")
-        
-        data = {}
-        for key in UserConfigDocument.ALL_SEVICE_FIELDS:
-            data[key] = user_config[key]
-
-        return data
-
-    def _update_user_config(self, uid: str = None, user_config_request: UserConfigRequest = None):
-        '''
-            Update user config in the database by user id string and UserConfigRequest object.
-        '''
-        update_data = user_config_request.dict(exclude_unset=True)
-
-        if update_data == {}:
-            raise Exception("No data to update")
-        
-        result = Database()._instance.get_user_config_collection().update_one(
-            {'uid': uid},
-            {'$set': update_data}
-        )
-        if result.modified_count == 0:
-            raise Exception("No user config updated")

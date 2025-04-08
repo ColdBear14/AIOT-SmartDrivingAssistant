@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from services.user_service import UserService
 
-from models.request import UserInfoRequest, UserConfigRequest
+from models.request import UserInfoRequest
 
 router = APIRouter()
 
@@ -160,58 +160,3 @@ async def delete_user_avatar(uid = Depends(get_user_id)):
             content={"message": "Internal server error ", "detail": e.args[0]},
             status_code=500
         )
-
-@router.get("/config")
-async def get_user_config(uid = Depends(get_user_id)):
-    try:
-        user_config_data = UserService()._get_user_config(uid)
-
-        CustomLogger().get_logger().info(f"User config: {user_config_data}")
-
-        return JSONResponse(
-            content=user_config_data,
-            status_code=200,
-            media_type="application/json"
-        )
-        
-    except Exception as e:
-        if e.args[0] == "User config not find":
-            return JSONResponse(
-                content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
-                status_code=404
-            )
-        else:
-            return JSONResponse(
-                content={"message":  "Internal server error ", "detail": e.args[0]},
-                status_code=500
-            )
-
-@router.patch("/config")
-async def update_user_config(user_config_request: UserConfigRequest, uid = Depends(get_user_id)):
-    try: 
-        UserService()._update_user_config(uid, user_config_request)
-        CustomLogger().get_logger().info(f"User config updated: {user_config_request}")
-
-        return JSONResponse(
-            content={"message": "User config updated successfully"},
-            status_code=200,
-            media_type="application/json"
-        )
-    
-    except Exception as e:
-        if e.args[0] == "No data to update":
-            return JSONResponse(
-                content={"message": e.args[0], "detail": "Request contain no data to update"},
-                status_code=422
-            )
-        elif e.args[0] == "No user config updated":
-            return JSONResponse(
-                content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
-                status_code=404
-            )
-        else:
-            return JSONResponse(
-                content={"message":  "Internal server error ", "detail": e.args[0]},
-                status_code=500
-            )
-

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../components/Home/Home.module.css';
 import axios from 'axios';
+
 import { useContext } from 'react';
 import { UserContext } from '../hooks/UserContext.jsx';
+
+import { SensorTypes, IOTServices } from '../utils/IOTServices.jsx';
 
 const Home = () => {
   const { sensorData, setSensorData, servicesState } = useContext(UserContext);
@@ -21,22 +24,22 @@ const Home = () => {
   const [error, setError] = useState(null);
 
   // Kiểm tra an toàn để tránh lỗi undefined
-  const safeServicesState = servicesState || {
-    distance: true,
-    temperature: true,
-    driver: true,
-    slope: true,
-    headlight: true,
-  };
+  const safeServicesState = servicesState || Object.fromEntries(
+    Object.keys(IOTServices).map(key => [key, true])
+  );
 
   const handleGetData = async () => {
     setLoading(true);
     setError(null);
+    
     try {
-      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/iot/all_data`, {
+      const requestServices = Object.values(SensorTypes);
+
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/iot/data`, requestServices, {
         withCredentials: true,
         headers: { 'Content-Type': 'application/json' },
       });
+
       const sensorList = response.data.slice(0, 10);
       sensorList.forEach(sensor => {
         const value = parseFloat(sensor.value);

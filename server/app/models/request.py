@@ -12,18 +12,26 @@ class UserInfoRequest(BaseModel):
     phone: Optional[str] = Field(None, min_length=10, max_length=10, pattern="^[0-9]*$")
     address: Optional[str] = Field(None, min_length=3, max_length=100)
     date_of_birth: Optional[str] = Field(None, pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-[0-9]{4}$")
+    
+class SensorDataRequest(BaseModel):
+    sensor_types: list[Literal["temp", "humid", "lux", "dist"]] = Field(..., min_items=1, max_items=4)
 
 class ServiceMode(str, Enum):
     AUTO = "auto"
     MANUAL = "manual"
+    ON = "on"
     OFF = "off"
 
-class UserConfigRequest(BaseModel):
-    temp_service: Optional[ServiceMode] = None
-    humid_service: Optional[ServiceMode] = None
-    lux_service: Optional[ServiceMode] = None
+class ServiceConfigRequest(BaseModel):
+    air_cond_service: Optional[ServiceMode] = None
+    drowsiness_service: Optional[ServiceMode] = None
+    headlight_service: Optional[ServiceMode] = None
     dist_service: Optional[ServiceMode] = None
-    
-class SensorRequest(BaseModel):
-    sensor_type: Literal["temp","humid","lux","dist"]
-    amt: int = Field(...,ge=1, le=100)
+    humid_service: Optional[ServiceMode] = None
+
+class ControlServiceRequest(BaseModel):
+    air_cond_temp: Optional[int] = None
+    headlight_brightness: Optional[int] = None
+    drowsiness_threshold: Optional[int] = None
+    dist_threshold: Optional[int] = None
+    humid_threshold: Optional[int] = None
