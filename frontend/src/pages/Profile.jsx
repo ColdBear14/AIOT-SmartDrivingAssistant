@@ -133,6 +133,33 @@ function Profile() {
     }
   };
 
+  const handleDeleteAvatar = async (e) => {
+    e.preventDefault();
+  
+    try {
+      const response = await axios.delete(`${import.meta.env.VITE_SERVER_URL}/user/avatar`, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (response) {
+        console.log('Avatar deleted successfully: ', response.data);
+  
+        // TODO: handle delete avatar
+      }
+    } catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+  
+      } else {
+        // TODO: handle internal server error
+  
+      }
+    }
+  };
+
   return (
     <div className={`pt-1 ${styles.container}`}>
       <div className="row">
