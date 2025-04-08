@@ -22,6 +22,8 @@ function Profile() {
   const [avatar, setAvatar] = useState(defaultAvatar);
 
   useEffect(() => {
+    // TODO: check UserContext first, call API if "user" in UserContext is empty
+
     axios.get(`${import.meta.env.VITE_SERVER_URL}/user/`,
       {
         withCredentials: true,
@@ -67,7 +69,7 @@ function Profile() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmitUserData = async (e) => {
     e.preventDefault();
 
     try {
@@ -82,15 +84,52 @@ function Profile() {
         }
       });
 
-      console.log("Response:", response.data);
+      if (response) {
+        console.log("Response:", response.data);
 
-      setUser(data);
-
-      alert("Profile saved successfully!");
+        setUser(data);
+      }
     } catch (error) {
-      console.error("Lỗi khi gửi dữ liệu:", error);
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
 
-      alert("Có lỗi xảy ra khi lưu dữ liệu.");
+      } else if (error.response.status === 422) {
+        // TODO: handle validation error
+
+      } else {
+        // TODO: handle internal server error
+
+      }
+    }
+  };
+
+  const handleSubmitAvatar = async (e) => {
+    e.preventDefault();
+
+    try {
+      const formData = new FormData();
+      formData.append("file", e.target.avatar.files[0]);
+
+      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/user/avatar`, formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response) {
+        console.log("Avatar updated successfully: ", response.data);
+
+        // TODO: handle store avatar
+      }
+    } catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+      
+      } else {
+        // TODO: handle internal server error
+
+      } 
     }
   };
 
@@ -135,7 +174,7 @@ function Profile() {
 
         {/* Right Form Section */}
         <div className="col-md-5">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmitUserData}>
 
             <div className={styles.saveButtonContainer}>
               <button type="submit" className={styles.submitButton}>

@@ -39,9 +39,17 @@ function Services() {
 
       if (response) {
         console.log('Services updated successfully: ', response);
+
+        // TODO: handle store services
       }
     } catch (error) {
-      console.error('Error:', error);
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+
+      } else {
+        // TODO: handle internal server error
+
+      }
     }
   };
 

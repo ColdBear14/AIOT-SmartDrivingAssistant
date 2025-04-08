@@ -28,7 +28,7 @@ const Home = () => {
     Object.keys(IOTServices).map(key => [key, true])
   );
 
-  const handleGetData = async () => {
+  const handleGetSensorData = async () => {
     setLoading(true);
     setError(null);
     
@@ -45,24 +45,33 @@ const Home = () => {
         const value = parseFloat(sensor.value);
         let type = sensor.sensor_type.toString().toLowerCase().replace(/\s+|\W+/g, '');
         switch (type) {
-          case 'temp':
+          case SensorTypes.temp:
             setData((prev) => ({ ...prev, temperature: value }));
             break;
-          case 'humid':
+          case SensorTypes.humid:
             setData((prev) => ({ ...prev, humidity: value }));
             break;
-          case 'dis':
+          case SensorTypes.dist:
             setData((prev) => ({ ...prev, distance: value }));
             break;
-          case 'lux':
+          case SensorTypes.lux:
             setData((prev) => ({ ...prev, lightLevel: value }));
             break;
           default:
             break;
         }
       });
+
       setSensorData(sensorList);
     } catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+
+      } else if (error.response.status === 404) {
+        // TODO: handle not found error
+
+      }
+      
       setError(error.message);
     } finally {
       setLoading(false);
@@ -70,8 +79,8 @@ const Home = () => {
   };
 
   useEffect(() => {
-    handleGetData();
-    const interval = setInterval(handleGetData, 2000);
+    handleGetSensorData();
+    const interval = setInterval(handleGetSensorData, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -86,31 +95,103 @@ const Home = () => {
   const [sliderValue, setSliderValue] = useState([0, 0]);
   const [sliderValue2, setSliderValue2] = useState([0, 0]);
 
-  // const handleSlider1Change = debounce(async (value) => {
-  //   setSliderValue1(value);
-  //   try {
-  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
-  //       min: value[0],
-  //       max: value[1],
-  //     });
-  //     console.log('Slider 1 API Response:', response.data);
-  //   } catch (error) {
-  //     console.error('Slider 1 Error:', error);
-  //   }
-  // }, 300); // Gửi API sau 300ms kể từ lần thay đổi cuối cùng
+  const handleSlider1Change = debounce(async (value) => {
+    setSliderValue1(value);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
+        min: value[0],
+        max: value[1],
+      });
+      console.log('Slider 1 API Response:', response.data);
+    } catch (error) {
+      console.error('Slider 1 Error:', error);
+    }
+  }, 300); // Gửi API sau 300ms kể từ lần thay đổi cuối cùng
 
-  // const handleSlider2Change = debounce(async (value) => {
-  //   setSliderValue2(value);
-  //   try {
-  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
-  //       min: value[0],
-  //       max: value[1],
-  //     });
-  //     console.log('Slider 2 API Response:', response.data);
-  //   } catch (error) {
-  //     console.error('Slider 2 Error:', error);
-  //   }
-  // }, 300);
+  const handleSlider2Change = debounce(async (value) => {
+    setSliderValue2(value);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
+        min: value[0],
+        max: value[1],
+      });
+      console.log('Slider 2 API Response:', response.data);
+    } catch (error) {
+      console.error('Slider 2 Error:', error);
+    }
+  }, 300);
+
+  const handleGetUserData = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/user/`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response) {
+        console.log('User data fetched successfully: ', response.data);
+
+        // TODO: handle store user data
+      }
+    } catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+
+      } else {
+        // TODO: handle internal server error
+
+      }
+    }
+  };
+
+  const handleGetUserAvatar = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/user/avatar`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response) {
+        console.log('User avatar fetched successfully: ', response.data);
+
+        // TODO: handle store user avatar
+      }
+    } catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+
+      } else if (error.response.status === 404) {
+        // TODO: handle not found error
+
+      } else {
+        // TODO: handle internal server error
+
+      }
+    }
+  };
+
+  const handleGetServicesConfig = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/iot/config`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response) {
+        console.log('Services config fetched successfully: ', response.data);
+      
+        // TODO: handle store services config
+      }
+    } catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+      
+      } else {
+        // TODO: handle internal server error
+
+      }
+    }
+  };
 
   return (
     <>
