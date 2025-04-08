@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axios from 'axios'; 
 
 import { UserContext } from '../../hooks/UserContext.jsx';
 
@@ -35,7 +34,7 @@ function LoginForm({ showSignUp }) {
       }
     )
       .then(response => {
-        console.log(`Login successful with response: ${response.data}`);
+        console.log(`Login successful with response: ${response}`);
         navigate('/home');
       })
       .catch(error => {

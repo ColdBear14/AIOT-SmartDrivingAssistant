@@ -8,14 +8,11 @@ import { useContext } from "react";
 import { UserContext } from "../hooks/UserContext.jsx";
 
 const mockData = {
+  userName: "Charlene Reed",
   name: "Charlene Reed",
   email: "charlenereed@gmail.com",
-  dob: "1990-01-25",
-  permanentAddress: "San Jose, California, USA",
-  userName: "Charlene Reed",
-  password: "********",
-  presentAddress: "San Jose, California, USA",
-  country: "USA",
+  date_of_birth: "1990-01-25",
+  address: "San Jose, California, USA"
 };
 
 function Profile() {
@@ -25,7 +22,6 @@ function Profile() {
   const [avatar, setAvatar] = useState(defaultAvatar);
 
   useEffect(() => {
-    axios.defaults.withCredentials = true;
     axios.get(`${import.meta.env.VITE_SERVER_URL}/user/`,
       {
         withCredentials: true,
@@ -35,7 +31,10 @@ function Profile() {
       }
     )
       .then((response) => {
-        console.log("Dữ liệu tải về:", response.data);
+        let data = response.data;
+        data.date_of_birth = data.date_of_birth.split('-').reverse().join('-');
+
+        console.log("Dữ liệu tải về:", data);
 
         setUser(response.data);
         setFormData(response.data);
@@ -46,19 +45,14 @@ function Profile() {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value: rawValue } = e.target;
+    let value = rawValue;
 
-    if (name === "dob") {
-      const selectedDate = new Date(value);
-      const minDate = new Date("1900-01-01");
-      const maxDate = new Date();
-
-      if (selectedDate < minDate || selectedDate > maxDate) {
-        alert("Ngày sinh phải từ năm 1900 đến hiện tại!");
-        return;
-      }
+    if (name === "date_of_birth") {
+      console.log("RawValue: ", rawValue)
     }
 
+    // Update formData state
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -77,16 +71,20 @@ function Profile() {
     e.preventDefault();
 
     try {
-      const response = await axios.put(`${import.meta.env.VITE_SERVER_URL}/user`, formData, {
+      let data = formData;
+      data.date_of_birth = data.date_of_birth.split('-').reverse().join('-');
+      console.log("Update data: ", data);
+
+      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/user/`, data, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json'
         }
       });
 
-      console.log("Dữ liệu gửi đi:", response.data);
+      console.log("Response:", response.data);
 
-      setUser(formData);
+      setUser(data);
 
       alert("Profile saved successfully!");
     } catch (error) {
@@ -124,13 +122,13 @@ function Profile() {
             </div>
 
             <div className="mb-3 me-4">
-              <label htmlFor="dob" className={styles.formLabel}>Date of Birth</label>
-              <input type="date" className={`form-control ${styles.formControl}`} id="dob" name="dob" value={formData.dob} onChange={handleChange} />
+              <label htmlFor="date_of_birth" className={styles.formLabel}>Date of Birth</label>
+              <input type="date" className={`form-control ${styles.formControl}`} id="date_of_birth" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} />
             </div>
 
             <div className="mb-3 me-4">
-              <label htmlFor="permanentAddress" className={styles.formLabel}>Permanent Address</label>
-              <input type="text" className={`form-control ${styles.formControl}`} id="permanentAddress" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
+              <label htmlFor="address" className={styles.formLabel}>Address</label>
+              <input type="text" className={`form-control ${styles.formControl}`} id="address" name="address" value={formData.address} onChange={handleChange} />
             </div>
           </form>
         </div>
@@ -138,25 +136,6 @@ function Profile() {
         {/* Right Form Section */}
         <div className="col-md-5">
           <form onSubmit={handleSubmit}>
-            <div className="mb-3 me-4">
-              <label htmlFor="userName" className={styles.formLabel}>User Name</label>
-              <input type="text" className={`form-control ${styles.formControl}`} id="userName" name="userName" value={formData.userName} onChange={handleChange} />
-            </div>
-
-            <div className="mb-3 me-4">
-              <label htmlFor="password" className={styles.formLabel}>Password</label>
-              <input type="password" className={`form-control ${styles.formControl}`} id="password" name="password" value={formData.password} onChange={handleChange} />
-            </div>
-
-            <div className="mb-3 me-4">
-              <label htmlFor="presentAddress" className={styles.formLabel}>Present Address</label>
-              <input type="text" className={`form-control ${styles.formControl}`} id="presentAddress" name="presentAddress" value={formData.presentAddress} onChange={handleChange} />
-            </div>
-
-            <div className="mb-3 me-4">
-              <label htmlFor="country" className={styles.formLabel}>Country</label>
-              <input type="text" className={`form-control ${styles.formControl}`} id="country" name="country" value={formData.country} onChange={handleChange} />
-            </div>
 
             <div className={styles.saveButtonContainer}>
               <button type="submit" className={styles.submitButton}>

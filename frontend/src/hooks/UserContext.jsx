@@ -3,6 +3,7 @@ import { createContext, useState, useEffect } from 'react';
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [sensorData, setSensorData] = useState([]);
 
@@ -24,7 +25,7 @@ export const UserProvider = ({ children }) => {
   }, [servicesState]);
 
   return (
-    <UserContext.Provider value={{ sessionId, setSessionId, sensorData, setSensorData, servicesState, setServicesState }}>
+    <UserContext.Provider value={{ user, setUser, sessionId, setSessionId, sensorData, setSensorData, servicesState, setServicesState }}>
       {children}
     </UserContext.Provider>
   );
