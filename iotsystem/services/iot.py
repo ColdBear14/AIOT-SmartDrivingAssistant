@@ -10,6 +10,11 @@ from Adafruit_IO import MQTTClient
 from services.database import Database
 import serial.tools.list_ports
 
+from services.webcam import VideoCam
+
+WAIT_TIME = 5.0
+EAR_THRESHOLD = 0.25 
+
 class IOTSystem:
     _instance = None
 
@@ -62,6 +67,8 @@ class IOTSystem:
         self.client.on_subscribe = self.subscribe
         self.client.connect()
         self.client.loop_background()
+        
+        self.videocam = VideoCam()
 
     async def connect_serial(self, port):
         """Async function to connect to serial device."""
@@ -170,22 +177,51 @@ class IOTSystem:
             # print(f"Invalid data format: {sensor_type} -> {value}")
             CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
 
+    async def start_webcam(self,uid):
+        # call to database for user preferences
+        try:
+            doc = await self.db.get_user_doc_by_id(uid)
+            if doc is None:
+                thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
+                
+            else:
+                thresholds = doc.get('camera', {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True})
+                
+        except Exception as e:
+            CustomLogger().get_logger().exception(f"Error getting user {uid} from database: {e}")
+            thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
+        
+        if self.videocam:
+            await self.videocam.start_webcam(thresholds)
+            
+        else:
+            CustomLogger().get_logger().warning("Webcam not initialized.")
+            
     async def start_system(self, uid):
         if not self.running:
             self.running = True
-            asyncio.create_task(self.readSerial(uid))
-            # print("IOT System started.")
-            CustomLogger().get_logger().info("IOT System started.")
+            # asyncio.create_task(self.readSerial(uid))
+            # CustomLogger().get_logger().info("Sensor System started.")
+            
+            asyncio.create_task(self.start_webcam(uid))
+            CustomLogger().get_logger().info("Webcam System started.")
         else:
             # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")
 
-    def stop_system(self):
+    async def stop_system(self):
         self.running = False
+        self.videocam.stop()
         # print("IOT System stopped.")
         CustomLogger().get_logger().info("IOT System stopped.")
 
 if __name__ == "__main__":
+    import time
     CustomLogger().get_logger().info("IOT System: __main__")
     iotsystem = IOTSystem()._instance
     asyncio.run(iotsystem.start_system('123'))
+    
+    
+    time.sleep(20)
+    
+    iotsystem.stop_system()
