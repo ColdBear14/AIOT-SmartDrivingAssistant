@@ -11,6 +11,7 @@ import httpx
 from services.iot_service import IOTService
 from models.request import SensorRequest
 
+
 router = APIRouter()
 
 @router.post('/on')
@@ -88,50 +89,23 @@ async def get_all_sensor_data(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
     
-@router.post('/slider1')
+@router.post('/slider')
 async def post_slider1_data(request: Request):
     uid = request.state.user_id
     data = await request.json()
 
-    CustomLogger().get_logger().info(f"Received slider1 data: {data}")
-
-    slider_data = {
-        "uid": str(uid),
-        "device_type": "headlight",
-        "value": float(data["max"]),
-    }
+    CustomLogger().get_logger().info(f"Received slider data: {data}")
 
     if 'min' not in data or 'max' not in data:
-        raise HTTPException(status_code=400, detail="Invalid slider2 data")
+        raise HTTPException(status_code=400, detail="Invalid slider data")
 
     try:
         # Assuming _send_slider_data can handle min and max values
-        IOTService()._send_slider_data(uid, slider_data)
-        return JSONResponse(content={"message": "Slider1 values sent successfully"}, status_code=200)
+        IOTService()._send_slider_data(uid, data)
+        return JSONResponse(content={"message": "Slider values sent successfully"}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.post('/slider2')
-async def post_slider2_data(response: JSONResponse, request: Request):
-    uid = request.state.user_id
-    data = await request.json()
 
-    CustomLogger().get_logger().info(f"Received slider2 data: {data}")
-
-    slider_data = {
-        "uid": str(uid),
-        "device_type": "airconditioner",
-        "value": float(data["max"]),
-    }
-
-    if 'min' not in data or 'max' not in data:
-        raise HTTPException(status_code=400, detail="Invalid slider2 data")
-
-    try:
-        # Assuming _send_slider_data can handle min and max values
-        IOTService()._send_slider_data(uid, slider_data)
-        return JSONResponse(content={"message": "Slider2 values sent successfully"}, status_code=200)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal server error")
 
     

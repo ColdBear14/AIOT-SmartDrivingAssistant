@@ -8,6 +8,7 @@ import { UserContext } from '../hooks/UserContext.jsx';
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
 import debounce from 'lodash.debounce';
+import "../components/Home/Slider.css"
 
 
 
@@ -113,14 +114,21 @@ const Home = () => {
   // Compute the warning dynamically based on the current distance
   const distanceWarning = getDistanceWarning(data.distance);
 
-  const [sliderValue, setSliderValue1] = useState([0, 0]);
-  const [sliderValue2, setSliderValue2] = useState([0, 0]);
-
-  const handleSlider1Change = debounce(async (value) => {
-    console.log('Slider1 value changed:', value); // Debug log
-    setSliderValue1(value);
+  const [sliderValues, setSliderValues] = useState({
+    airConditioner: [0, 0],
+    headLight: [0, 0],
+  });
+  
+  const handleSliderChange = debounce(async (value, sliderName) => {
+    console.log('Updating slider:', sliderName, 'with value:', value);
+    setSliderValues((prevValues) => ({
+      ...prevValues,
+      [sliderName]: value,
+    }));
+  
     try {
-      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider`, {
+        name: sliderName, 
         min: value[0],
         max: value[1],
       }, {
@@ -129,28 +137,9 @@ const Home = () => {
           'Content-Type': 'application/json',
         },
       });
-      console.log('Slider 1 API Response:', response.data);
+      console.log(`Slider ${sliderName} API Response:`, response.data);
     } catch (error) {
-      console.error('Slider 1 Error:', error.response?.data || error.message);
-    }
-  }, 300);
-
-  const handleSlider2Change = debounce(async (value) => {
-    console.log('Slider2 value changed:', value); // Debug log
-    setSliderValue2(value);
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
-        min: value[0],
-        max: value[1],
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('Slider 2 API Response:', response.data);
-    } catch (error) {
-      console.error('Slider 2 Error:', error.response?.data || error.message);
+      console.error(`Slider ${sliderName} Error:`, error.response?.data || error.message);
     }
   }, 300);
 
@@ -175,8 +164,8 @@ const Home = () => {
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
               </div>
-              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValue} step={20} onInput={(value) => handleSlider1Change(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
-              <p>Current Value: {sliderValue[1]}</p>
+              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValues.airConditioner} step={20} onInput={(value) => handleSliderChange(value,'airConditioner')}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+              <p>Current Value: {sliderValues.airConditioner[1]}</p>
             </div>
           </div>
         </div>
@@ -260,8 +249,8 @@ const Home = () => {
                   <button className={`rounded btn text-white ${data.headlightsMode === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                   <button className={`rounded btn text-white ${data.headlightsMode === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
                 </div>
-                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValue2} max={4} onInput={(value) => handleSlider2Change(value)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
-                <p>Current Value: {sliderValue2[1]}</p>
+                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValues.headLight} max={4} onInput={(value) => handleSliderChange(value,'headLight')}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+                <p>Current Value: {sliderValues.headLight[1]}</p>
               </div>
             </div>
           </div>
