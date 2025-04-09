@@ -1,7 +1,0 @@
-#range-slider .range-slider__thumb[data-lower] {
-  width: 0;
-}
-
-#range-slider .range-slider__range {
-  border-radius: 6px;
-}

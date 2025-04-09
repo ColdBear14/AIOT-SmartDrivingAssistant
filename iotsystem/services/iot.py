@@ -47,19 +47,8 @@ class IOTSystem:
             # print("No serial device found.")
             CustomLogger().get_logger().info("No serial device found.")
 
-<<<<<<< HEAD
-        self.client = MQTTClient(self.__AIO_USERNAME, self.__AIO_KEY)
-        self.client.on_connect = self.connect
-        self.client.on_disconnect = self.disconnect
-        self.client.on_message = self.message
-        self.client.on_subscribe = self.subscribe
-        self.client.connect()
-        self.client.loop_background()
         
         self.videocam = VideoCam()
-=======
-
->>>>>>> device-control
 
     async def connect_serial(self, port):
         """Async function to connect to serial device."""
@@ -191,18 +180,11 @@ class IOTSystem:
     async def start_system(self, uid):
         if not self.running:
             self.running = True
-<<<<<<< HEAD
             # asyncio.create_task(self.readSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
             
             asyncio.create_task(self.start_webcam(uid))
             CustomLogger().get_logger().info("Webcam System started.")
-=======
-            asyncio.create_task(self.readSerial(uid))
-            asyncio.create_task(self.sendSerial(uid))
-            # print("IOT System started.")
-            CustomLogger().get_logger().info("IOT System started.")
->>>>>>> device-control
         else:
             # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")
