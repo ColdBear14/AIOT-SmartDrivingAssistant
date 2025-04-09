@@ -180,7 +180,8 @@ class IOTSystem:
     async def start_system(self, uid):
         if not self.running:
             self.running = True
-            # asyncio.create_task(self.readSerial(uid))
+            asyncio.create_task(self.readSerial(uid))
+            asyncio.create_task(self.sendSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
             
             asyncio.create_task(self.start_webcam(uid))
