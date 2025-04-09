@@ -6,7 +6,6 @@ from helpers.custom_logger import CustomLogger
 
 import asyncio
 import serial_asyncio
-from Adafruit_IO import MQTTClient
 from services.database import Database
 import serial.tools.list_ports
 
@@ -18,7 +17,10 @@ EAR_THRESHOLD = 0.25
 class IOTSystem:
     _instance = None
 
-    __AIO_FEED_ID = ['led', 'fan']
+    FIELD_UID = "uid"
+    FIELD_DEVICE_TYPE = "device_type"
+    FIELD_TIMESTAMP = "timestamp"
+    FIELD_VAL = "val"
 
     def __new__(cls, config=None):
         if not cls._instance:
@@ -28,21 +30,6 @@ class IOTSystem:
 
     def _init_iot_system(self, config=None):
         CustomLogger().get_logger().info("IOT System initialized.")
-        
-        # Auto load config from .env file if not provided 
-        if config is None or not config.contains("aio_user") or not config.contains("aio_key"):
-            from dotenv import load_dotenv
-            import os
-
-            load_dotenv()
-            config = {
-                "aio_user": os.getenv("AIO_USER_NAME"),
-                "aio_key": os.getenv("AIO_KEY")
-            }
-            CustomLogger().get_logger().info("IOT System's config: " + str(config))
-
-        self.__AIO_USERNAME = config["aio_user"]
-        self.__AIO_KEY = config["aio_key"]
 
         self.db = Database()._instance
         self.running = False
@@ -60,6 +47,7 @@ class IOTSystem:
             # print("No serial device found.")
             CustomLogger().get_logger().info("No serial device found.")
 
+<<<<<<< HEAD
         self.client = MQTTClient(self.__AIO_USERNAME, self.__AIO_KEY)
         self.client.on_connect = self.connect
         self.client.on_disconnect = self.disconnect
@@ -69,6 +57,9 @@ class IOTSystem:
         self.client.loop_background()
         
         self.videocam = VideoCam()
+=======
+
+>>>>>>> device-control
 
     async def connect_serial(self, port):
         """Async function to connect to serial device."""
@@ -80,47 +71,50 @@ class IOTSystem:
             # print(f"Failed to connect to serial: {e}")
             CustomLogger().get_logger().exception(f"Failed to connect to serial: {e}")
 
-    def connect(self, client):
-        # print("Connected to Adafruit IO")
-        CustomLogger().get_logger().info("Connected to Adafruit IO")
-        for feed in IOTSystem.__AIO_FEED_ID:
-            client.subscribe(feed)
-
-    def subscribe(self, client, userdata, mid, granted_qos):
-        # print("Subscribed to Adafruit IO")
-        CustomLogger().get_logger().info("Subscribed to Adafruit IO")
-
-    def disconnect(self, client):
-        # print("Disconnected. Reconnecting...")
-        CustomLogger().get_logger().info("Disconnected. Reconnecting...")
-        asyncio.create_task(self.reconnect())
-
-    async def reconnect(self):
-        while True:
-            try:
-                self.client.connect()
-                self.client.loop_background()
-                # print("Reconnected!")
-                CustomLogger().get_logger().info("Reconnected!")
-                break
-            except Exception as e:
-                # print(f"Reconnect failed: {e}, retrying in 5 sec...")
-                CustomLogger().get_logger().exception(f"Reconnect failed: {e}, retrying in 5 sec...")
-                await asyncio.sleep(5)
-
-    def message(self, client, feed_id, payload):
-        CustomLogger().get_logger().info(f"Received: {payload}")
-        if self.writer:
-            self.writer.write(f"!{feed_id}:{payload}#".encode())
+    def recieveData(self, uid, data):
+        device_name = data.get("name")
+        device_value = data.get("max")
+        try:
+            doc = {
+                'uid': str(uid),
+                'device_type': str(device_name).lower(), 
+                'value': float(device_value)
+            }
+        except Exception as e:
+            return None
+        # Add the document to the database
+        Database()._instance._add_doc_with_timestamp('device_control', doc)
 
     async def sendSerial(self, uid):
         """Sends data to the serial device."""
-        if self.writer:
-                self.writer.write(f"!:#".encode())
-                # print(f"Sent: {data}")
-                CustomLogger().get_logger().info(f"Sent: ")
+        while self.running:
+            try:
+                # Set up the change stream to watch for updates
+                with Database()._instance.get_device_collection().watch() as stream:
+                    for change in stream:
+                        # Check if the change is relevant to the given UID
+                        if change['operationType'] == 'insert':
+                            doc = change['fullDocument']
+                            doc["_id"] = str(doc["_id"])
+                            CustomLogger().get_logger().info(f"Data retrieved: {doc}")
 
+                            feed = doc["device_type"]
+                            payload = doc["value"]
 
+                            message = f"!{feed}:{payload}#"
+                            CustomLogger().get_logger().info(f"Sending data: {message}")
+
+                            if self.writer:
+                                self.writer.write(message.encode())
+                                CustomLogger().get_logger().info(f"Sent: {message}")
+
+            except asyncio.CancelledError:
+                CustomLogger().get_logger().info("sendSerial task was cancelled.")
+                break
+            except Exception as e:
+                CustomLogger().get_logger().exception(f"Error watching database changes: {e}")
+
+            
     @staticmethod
     def getPort():
         ports = serial.tools.list_ports.comports()
@@ -153,7 +147,6 @@ class IOTSystem:
         if len(splitData) < 2:
             return
         sensor_type, value = splitData[0], splitData[1]
-        # print(f"Processed: {sensor_type} = {value}")
         CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
 
         sensor_map = {
@@ -162,8 +155,6 @@ class IOTSystem:
             "lux": "bright",
             "dis": "distance"
         }
-        if sensor_type in sensor_map:
-            self.client.publish(sensor_map[sensor_type], value)
 
         try:
             doc: dict = {
@@ -200,11 +191,18 @@ class IOTSystem:
     async def start_system(self, uid):
         if not self.running:
             self.running = True
+<<<<<<< HEAD
             # asyncio.create_task(self.readSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
             
             asyncio.create_task(self.start_webcam(uid))
             CustomLogger().get_logger().info("Webcam System started.")
+=======
+            asyncio.create_task(self.readSerial(uid))
+            asyncio.create_task(self.sendSerial(uid))
+            # print("IOT System started.")
+            CustomLogger().get_logger().info("IOT System started.")
+>>>>>>> device-control
         else:
             # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")

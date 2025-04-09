@@ -1,5 +1,11 @@
 from services.database import Database
 from models.request import SensorRequest
+from datetime import datetime
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+from iotsystem.services.iot import IOTSystem
 
 class IOTService:
     FIELD_UID = "uid"
@@ -41,7 +47,13 @@ class IOTService:
 
         return list(data)  # Convert cursor to list for easier handling
     
-    def _send_slider_data(self, uid: str = None, slider_value: str = None):
+    def _send_slider_data(self, uid: str = None, value: str = None):
         """
-        Send slider data to the serial port.
-        """
+        Send slider data to iotsystem.
+        """        
+        try:
+            # Send slider data to IOTSystem
+            IOTSystem().recieveData(uid, value)
+        except Exception as e:
+            return None
+

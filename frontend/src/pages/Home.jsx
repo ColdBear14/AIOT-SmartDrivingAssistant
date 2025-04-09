@@ -4,6 +4,16 @@ import axios from 'axios';
 import { useContext } from 'react';
 import { UserContext } from '../hooks/UserContext.jsx';
 
+<<<<<<< HEAD
+=======
+import RangeSlider from 'react-range-slider-input';
+import 'react-range-slider-input/dist/style.css';
+import debounce from 'lodash.debounce';
+import "../components/Home/Slider.css"
+
+
+
+>>>>>>> device-control
 const Home = () => {
   const { sensorData, setSensorData, servicesState } = useContext(UserContext);
   const [data, setData] = useState({
@@ -68,7 +78,15 @@ const Home = () => {
 
   useEffect(() => {
     handleGetData();
+<<<<<<< HEAD
     const interval = setInterval(handleGetData, 2000);
+=======
+    
+    const interval = setInterval(() => {
+      handleGetData();
+    }, 20000);
+
+>>>>>>> device-control
     return () => clearInterval(interval);
   }, []);
 
@@ -80,34 +98,34 @@ const Home = () => {
 
   const distanceWarning = getDistanceWarning(data.distance);
 
-  const [sliderValue, setSliderValue] = useState([0, 0]);
-  const [sliderValue2, setSliderValue2] = useState([0, 0]);
-
-  // const handleSlider1Change = debounce(async (value) => {
-  //   setSliderValue1(value);
-  //   try {
-  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider1`, {
-  //       min: value[0],
-  //       max: value[1],
-  //     });
-  //     console.log('Slider 1 API Response:', response.data);
-  //   } catch (error) {
-  //     console.error('Slider 1 Error:', error);
-  //   }
-  // }, 300); // Gửi API sau 300ms kể từ lần thay đổi cuối cùng
-
-  // const handleSlider2Change = debounce(async (value) => {
-  //   setSliderValue2(value);
-  //   try {
-  //     const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider2`, {
-  //       min: value[0],
-  //       max: value[1],
-  //     });
-  //     console.log('Slider 2 API Response:', response.data);
-  //   } catch (error) {
-  //     console.error('Slider 2 Error:', error);
-  //   }
-  // }, 300);
+  const [sliderValues, setSliderValues] = useState({
+    airConditioner: [0, 0],
+    headLight: [0, 0],
+  });
+  
+  const handleSliderChange = debounce(async (value, sliderName) => {
+    console.log('Updating slider:', sliderName, 'with value:', value);
+    setSliderValues((prevValues) => ({
+      ...prevValues,
+      [sliderName]: value,
+    }));
+  
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider`, {
+        name: sliderName, 
+        min: value[0],
+        max: value[1],
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log(`Slider ${sliderName} API Response:`, response.data);
+    } catch (error) {
+      console.error(`Slider ${sliderName} Error:`, error.response?.data || error.message);
+    }
+  }, 300);
 
   return (
     <>
@@ -120,9 +138,38 @@ const Home = () => {
                 <p className='mb-1 small text-body-tertiary'>Temperature</p>
                 <p className="fw-bold fs-2 mb-1">{data.temperature?.toFixed(1)}°C</p>
               </div>
+<<<<<<< HEAD
               <div className='mb-2'>
                 <p className='mb-1 small text-body-tertiary'>Humidity</p>
                 <p className="fw-bold fs-2 mb-1">{data.humidity?.toFixed(1)}%</p>
+=======
+              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValues.airConditioner} step={20} onInput={(value) => handleSliderChange(value,'airConditioner')}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+              <p>Current Value: {sliderValues.airConditioner[1]}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md mb-3">
+          <div className={[styles.panel, `p-4 shadow bg-white rounded`].join(" ")}>
+            <h4 className="mb-2">Driver monitoring</h4>
+            <div className='mb-2 d-flex align-items-center'>
+              <div className="rounded-circle me-2 bg-success" style={{ width: '16px', height: '16px' }}></div>
+              <p className='mb-0 fw-bold fs-4'>{data.driverStatus}</p>
+            </div>
+            <div className='mb-2'>
+              <p className='mb-1 small text-body-tertiary'>Sleepiness detection sensitivity</p>
+              <div className='d-flex align-items-center'>
+                <span className='me-2 small'>Low</span>
+                <input
+                  type='range'
+                  min='0'
+                  max='10'
+                  value='3'
+                  onChange={() => { }}
+                  className='mx-2 flex-grow-1'
+                />
+                <span className='ms-2 small'>High</span>
+>>>>>>> device-control
               </div>
               <div className='mb-2'>
                 <p className='mb-2 small text-body-tertiary'>Air conditioning</p>
@@ -220,6 +267,11 @@ const Home = () => {
                     <button className={`rounded btn text-white ${data.headlightsMode === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
                   </div>
                 </div>
+<<<<<<< HEAD
+=======
+                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValues.headLight} max={4} onInput={(value) => handleSliderChange(value,'headLight')}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+                <p>Current Value: {sliderValues.headLight[1]}</p>
+>>>>>>> device-control
               </div>
             </div>
           </div>
