@@ -4,6 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dotenv import load_dotenv
 load_dotenv()
 
+from helpers.custom_logger import CustomLogger
 import cv2
 import numpy as np
 import helpers.drowsiness_detection as dd
@@ -11,6 +12,9 @@ import time
 import winsound
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from services.database import Database
+
+
 
 class VideoCam:
     def __init__(self):
@@ -37,6 +41,8 @@ class VideoCam:
         self.running = False
 
         self.executor = ThreadPoolExecutor(max_workers=1)
+        
+        self.db = Database()._instance
         
     @staticmethod
     def plot_text(image, text, origin, color, font=cv2.FONT_HERSHEY_SIMPLEX,scale=0.8,thickness=2):
@@ -98,7 +104,6 @@ class VideoCam:
     async def start_webcam(self,thresholds:dict,mirror= False):
         self.running = True
         self.show_window = thresholds.get('show_window', True)
-        loop = asyncio.get_event_loop()
         self.future = self.executor.submit(
             self._webcam_loop, thresholds, mirror
         )    
@@ -117,13 +122,11 @@ class VideoCam:
             
             rgb_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             
-            processed_frame, play_alarm = self.ear_detection(rgb_frame,thresholds)
+            self.last_frame = self.ear_detection(rgb_frame,thresholds)
             
             if self.show_window:
-                cv2.imshow('Driver Monitor',processed_frame[:,:,::-1])
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            # print("Frame processed.")    
+                cv2.imshow('Driver Monitor',self.last_frame[0][:,:,::-1])
+                cv2.waitKey(1)
             time.sleep(0.01)
             
         cam.release()

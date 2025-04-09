@@ -193,6 +193,15 @@ class IOTSystem:
         
         if self.videocam:
             await self.videocam.start_webcam(thresholds)
+            last_alarm_state = None
+            while self.videocam.running:
+                await asyncio.sleep(0.1)
+                if hasattr(self.videocam,'last_frame'):
+                    _,play_alarm = self.videocam.last_frame
+                    if play_alarm != last_alarm_state:
+                        value = '1' if play_alarm else '0'
+                        self.db._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
+                        last_alarm_state = play_alarm                    
             
         else:
             CustomLogger().get_logger().warning("Webcam not initialized.")
