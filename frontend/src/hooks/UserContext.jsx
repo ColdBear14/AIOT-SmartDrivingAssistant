@@ -7,7 +7,6 @@ export const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [sessionId, setSessionId] = useState(null);
-  const [sensorData, setSensorData] = useState([]);
 
   // Khởi tạo servicesState từ localStorage hoặc giá trị mặc định
   const [servicesState, setServicesState] = useState(() => {
@@ -23,7 +22,7 @@ export const UserProvider = ({ children }) => {
   }, [servicesState]);
 
   return (
-    <UserContext.Provider value={{ user, setUser, sessionId, setSessionId, sensorData, setSensorData, servicesState, setServicesState }}>
+    <UserContext.Provider value={{ user, setUser, sessionId, setSessionId, servicesState, setServicesState }}>
       {children}
     </UserContext.Provider>
   );

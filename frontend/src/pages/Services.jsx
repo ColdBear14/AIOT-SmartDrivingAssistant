@@ -1,7 +1,5 @@
 import React from 'react';
-
 import axios from 'axios';
-
 import styles from '../components/Home/Services.module.css';
 import { useContext } from 'react';
 import { UserContext } from '../hooks/UserContext.jsx';
@@ -10,122 +8,93 @@ import { IOTServices } from '../utils/IOTServices.jsx';
 function Services() {
   const { servicesState, setServicesState } = useContext(UserContext);
 
-  const serviceStates = {
+  const serviceModes = {
     auto: "auto",
     manual: "manual",
     on: "on",
     off: "off"
   }
 
-  const safeServicesState = servicesState || Object.fromEntries(
-    Object.keys(IOTServices).map(key => [key, true])
-  );
-
-  const handleToggleChange = (service, value) => {
-    const newState = { ...safeServicesState, [service]: value };
-    setServicesState(newState);
+  // Map frontend display names to service types
+  const serviceDisplayNames = {
+    [IOTServices.dist_service]: { title: "Distance", description: "Distance between objects" },
+    [IOTServices.air_cond_service]: { title: "Air Conditioning", description: "Automatic air conditioning" },
+    [IOTServices.drowsiness_service]: { title: "Driver monitoring", description: "Check the driver's status" },
+    [IOTServices.humid_service]: { title: "Humidity Control", description: "Monitor and control humidity" },
+    [IOTServices.headlight_service]: { title: "Smart Headlights", description: "Adjust Light when it's dark" }
   };
 
-  const handleSaveChanges = async (e) => {
-    e.preventDefault();
-    
+  let safeServicesState = servicesState;
+
+  const handleToggleChange = async (serviceType, value) => {
+    const prevState = servicesState;
     try {
-      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/iot/config`, servicesState, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
+
+      safeServicesState = { ...safeServicesState, [serviceType]: value };
+      
+      // Send control request to backend
+      const response = await axios.patch(
+        `${import.meta.env.VITE_SERVER_URL}/iot/service`,
+        { [serviceType]: value ? serviceModes.on : serviceModes.off },
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
         }
-      });
+      );
 
       if (response) {
-        console.log('Services updated successfully: ', response);
-
-        // TODO: handle store services
+        setServicesState(safeServicesState);
       }
+
+      console.log(`Service ${serviceType} updated to ${value ? serviceModes.on : serviceModes.off}`);
     } catch (error) {
-      if (error.response.status === 401) {
-        // TODO: handle unauthorized error
+      // Revert local state on error
+      setServicesState(prevState);
 
-      } else {
-        // TODO: handle internal server error
-
-      }
+      console.error('Error updating service:', error);
+    }
+    finally {
+      console.log("servicesState: ", servicesState);
     }
   };
 
+  const renderServiceToggle = (serviceType) => {
+    const displayInfo = serviceDisplayNames[serviceType];
+    return (
+      <div key={serviceType} className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
+        <label 
+          className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} 
+          role='switch' 
+          htmlFor={`${serviceType}Toggle`}
+        >
+          <h4 className={styles.servicesToggleHeader}>{displayInfo.title}</h4>
+          <div className={styles.servicesToggleText}>{displayInfo.description}</div>
+        </label>
+        <input
+          type="checkbox"
+          className="form-check-input"
+          id={`${serviceType}Toggle`}
+          checked={safeServicesState[serviceType]}
+          onChange={() => handleToggleChange(serviceType, !safeServicesState[serviceType])}
+        />
+      </div>
+    );
+  };
+
+  // Group services into columns
+  const serviceTypes = Object.keys(IOTServices);
+  const servicesPerColumn = Math.ceil(serviceTypes.length / 3);
+  const columns = Array.from({ length: 3 }, (_, colIndex) => 
+    serviceTypes.slice(colIndex * servicesPerColumn, (colIndex + 1) * servicesPerColumn)
+  );
+
   return (
     <div className="row">
-      <div className="col-md-4">
-        <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
-          <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="distanceToggle">
-            <h4 className={styles.servicesToggleHeader}>Distance</h4>
-            <div className={styles.servicesToggleText}>Distance between objects</div>
-          </label>
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="distanceToggle"
-            checked={safeServicesState.distance}
-            onChange={() => handleToggleChange('distance', !safeServicesState.dist_service)}
-          />
+      {columns.map((columnServices, index) => (
+        <div key={index} className="col-md-4">
+          {columnServices.map(serviceType => renderServiceToggle(serviceType))}
         </div>
-        <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
-          <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="temperatureToggle">
-            <h4 className={styles.servicesToggleHeader}>Air Conditioning</h4>
-            <div className={styles.servicesToggleText}>Automatic air conditioning</div>
-          </label>
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="temperatureToggle"
-            checked={safeServicesState.temperature}
-            onChange={() => handleToggleChange('temperature', !safeServicesState.temp_service)}
-          />
-        </div>
-      </div>
-      <div className="col-md-4">
-        <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
-          <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="driverToggle">
-            <h4 className={styles.servicesToggleHeader}>Driver monitoring</h4>
-            <div className={styles.servicesToggleText}>Check the driver's status</div>
-          </label>
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="driverToggle"
-            checked={safeServicesState.driver}
-            onChange={() => handleToggleChange('driver', !safeServicesState.driver)}
-          />
-        </div>
-        <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
-          <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="slopeToggle">
-            <h4 className={styles.servicesToggleHeader}>Slope Detection</h4>
-            <div className={styles.servicesToggleText}>Detect the slope of the road</div>
-          </label>
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="slopeToggle"
-            checked={safeServicesState.slope}
-            onChange={() => handleToggleChange('slope', !safeServicesState.slope)}
-          />
-        </div>
-      </div>
-      <div className="col-md-4">
-        <div className={[styles.servicesToggle, 'form-check form-switch mb-3'].join(' ')}>
-          <label className={[styles.servicesToggleLabel, "form-check-label"].join(' ')} role='switch' htmlFor="headlightToggle">
-            <h4 className={styles.servicesToggleHeader}>Smart Headlights</h4>
-            <div className={styles.servicesToggleText}>Adjust Light when it's dark</div>
-          </label>
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="headlightToggle"
-            checked={safeServicesState.headlight}
-            onChange={() => handleToggleChange('headlight', !safeServicesState.lux_service)}
-          />
-        </div>
-      </div>
+      ))}
     </div>
   );
 }

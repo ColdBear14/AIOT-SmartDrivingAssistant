@@ -185,6 +185,31 @@ class IOTSystem:
         # print("IOT System stopped.")
         CustomLogger().get_logger().info("IOT System stopped.")
 
+    async def control_service(self, service_type: str, value: any = None):
+        """Controls a service state (on/off) and sends appropriate commands to Arduino"""
+        if not self.writer:
+            CustomLogger().get_logger().warning("No serial connection available")
+            return False
+            
+        command = f"!{service_type}:"
+        if isinstance(value, str):
+            # Handle on/off states
+            command += "1" if value.lower() == "on" else "0"
+        elif value is not None:
+            # Handle numeric values for thresholds, temperature, etc.
+            command += str(value)
+        else:
+            command += "1"  # Default ON value
+        command += "#"
+            
+        try:
+            self.writer.write(command.encode())
+            CustomLogger().get_logger().info(f"Service command sent: {command}")
+            return True
+        except Exception as e:
+            CustomLogger().get_logger().error(f"Failed to send service command: {e}")
+            return False
+
 if __name__ == "__main__":
     CustomLogger().get_logger().info("IOT System: __main__")
     iotsystem = IOTSystem()._instance

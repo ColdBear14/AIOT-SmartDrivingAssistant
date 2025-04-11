@@ -30,7 +30,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Check for session token in cookies
         session_id = request.cookies.get("session_id")
         if not session_id:
-            return JSONResponse({"detail": "Unauthorized: Missing session token"}, status_code=401)
+            CustomLogger().get_logger().info("AuthMiddleware: Missing session token")
+            return JSONResponse(
+                content={"detail": "Unauthorized: Missing session token"},
+                status_code=401
+            )
 
     # Validate session in Redis
         # session_data = redis_client.hgetall(session_id)

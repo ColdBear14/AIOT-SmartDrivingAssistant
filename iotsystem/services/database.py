@@ -50,25 +50,6 @@ class Database:
         CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
-    def push_to_database(self, collection_name, document):
-        pass
-
-# User region
-    def get_user_collection(self):
-        return self.db.get_collection('user')
-    
-    def get_user_doc_by_id(self, id):
-        return self.get_user_collection().find_one({'_id': id})
-# End user region
-    
-# UserConfig region
-    def get_userconfig_collection(self):
-        return self.db.get_collection('userconfig')
-    
-    def get_userconfig_doc_by_id(self, id):
-        return self.get_userconfig_collection().find_one({'_id': id})
-# End userconfig region
-    
 # Sensor region
     def get_sensor_collection(self):
         return self.db.get_collection('environment_sensor')

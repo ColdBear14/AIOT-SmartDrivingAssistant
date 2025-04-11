@@ -1,94 +1,39 @@
-from services.database import Database
-from models.request import ControlServiceRequest, SensorDataRequest, ServiceConfigRequest
-from models.mongo_doc import ServiceConfigDocument
+import os
+import httpx
+from utils.custom_logger import CustomLogger
 
 class IOTService:
-    FIELD_UID = "uid"
-    FIELD_SENSOR_TYPE = "sensor_type"
-    FIELD_TIMESTAMP = "timestamp"
-    FIELD_VAL = "val"
+    def _get_iot_system_connection_detail(self, uid: str = None):
+        pass
 
-    def _create_init_service_config_data(self, uid: str = None):
-        init_service_config_data = {}
-
-        init_service_config_data[ServiceConfigDocument.FIELD_UID] = uid if uid else ""
-
-        for field in ServiceConfigDocument.ALL_SEVICE_FIELDS:
-            init_service_config_data[field] = "off"
-
-        for field in ServiceConfigDocument.ALL_VALUE_FIELDS:
-            init_service_config_data[field] = 0
-
-        return init_service_config_data
-
-    def _get_newest_sensor_data(self, uid: str = None, sensor_type: str = None) -> dict:
-        """
-        Get the newest sensor data for a specific user and sensor type.
-        """
-        data = Database()._instance.get_env_sensor_collection().find_one(
-            {
-                self.FIELD_UID: uid,
-                self.FIELD_SENSOR_TYPE: sensor_type
-            },
-            sort=[(self.FIELD_TIMESTAMP, -1)]  # Sort by timestamp in descending order
-        )
-
-        if data and data['_id']:
-            data['_id'] = str(data['_id'])
-
-        return data
-
-    def _get_sensor_data(self, uid: str = None, request: SensorDataRequest = None) -> list:
-        """
-        Get the newest sensor data for a specific user and multiple sensor types.
-        """
-        sensor_types = request.sensor_types
-
-        data = []
-        for sensor_type in sensor_types:
-            newest_data = self._get_newest_sensor_data(uid, sensor_type)
-            if newest_data:
-                data.append(newest_data)
-
-        if data.__len__() == 0:
-            raise Exception("No data found")
-
-        return data
+    def _update_iot_system_connection_detail(self, uid: str = None, connection_detail: dict = None):
+        pass
     
-    def _get_service_config(self, uid: str = None):
-        '''
-            Get user config from the database by user id string.
-        '''
-        user_config = Database()._instance.get_service_config_collection().find_one({'uid': uid})
-        
-        if not user_config:
-            raise Exception("Service config not find")
-        
-        data = {}
-        for key in ServiceConfigDocument.ALL_SEVICE_FIELDS:
-            data[key] = user_config[key]
-
-        for key in ServiceConfigDocument.ALL_VALUE_FIELDS:
-            data[key] = user_config[key]
-
-        return data
-
-    def _update_service_config(self, uid: str = None, user_config_request: ServiceConfigRequest = None):
-        '''
-            Update user config in the database by user id string and UserConfigRequest object.
-        '''
-        update_data = user_config_request.dict(exclude_unset=True)
-
-        if update_data == {}:
-            raise Exception("No data to update")
-        
-        result = Database()._instance.get_service_config_collection().update_one(
-            {'uid': uid},
-            {'$set': update_data}
-        )
-        if result.modified_count == 0:
-            raise Exception("No service config updated")
-
+    async def _control_service(self, uid: str = None, service_type: str = None, value: int = None):
+        """
+        Send control request to IoT system to control a specific service.
+        """
+        try:
+            iot_server_url = os.getenv("IOT_SERVER_URL")
+            iot_server_port = os.getenv("IOT_SERVER_PORT")
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{iot_server_url}:{iot_server_port}/service/control",
+                    json={
+                        "user_id": uid,
+                        "service_type": service_type,
+                        "value": value
+                    }
+                )
+                
+                CustomLogger().get_logger().info(f"Control service response: {response.status_code}")
+                return response.status_code == 200
+                
+        except Exception as e:
+            CustomLogger().get_logger().error(f"Failed to control service: {e}")
+            return False
+    
     def _send_slider_data(self, uid: str = None, slider_value: str = None):
         """
         Send slider data to the serial port.

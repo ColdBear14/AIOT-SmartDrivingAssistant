@@ -1,6 +1,8 @@
 import styles from '../components/Home/activityHistory.module.css';
 import React, { useState, useEffect } from 'react';
 
+import axios from 'axios';
+
 export default function activityHistory() {
   // Dữ liệu mẫu cho lịch sử hoạt động
   const [activities, setActivities] = useState([]);
@@ -13,6 +15,32 @@ export default function activityHistory() {
   const MAX_PAGES = 5;
   const ITEMS_PER_PAGE = 8;
   const MAX_ITEMS = MAX_PAGES * ITEMS_PER_PAGE;
+
+  const handleGetHistory = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/app/history`, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response) {
+        console.log('History fetched successfully: ', response.data);
+
+        // TODO: handle response data
+
+      }
+    }
+    catch (error) {
+      if (error.response.status === 401) {
+        // TODO: handle unauthorized error
+
+      }
+      else {
+        // TODO: handle internal server error
+        
+      }
+    }
+  };
 
   // Giả lập cập nhật dữ liệu cho thời gian thực
   useEffect(() => {

@@ -1,27 +1,29 @@
 import styles from './Sidebar.module.css';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import Robot from '../../../assets/robot.svg';
-
 import axios from 'axios';
 
 const SideBar = () => {
-  const handleLogout = async () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
     try {
-      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/auth/logout`, {
+      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/auth/logout`, {}, {
         withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' }
       });
 
-      if (response) {
+      if (response.status === 200) {
         console.log('Logout successful: ', response.data);
+        navigate('/');
       } else {
         alert("Something's wrong!");
       }
     } catch (error) {
       console.log(error);
+      alert('Failed to logout. Please try again.');
     }
   };
 
@@ -65,12 +67,12 @@ const SideBar = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/" className={styles.sidebarLink} onClick={handleLogout}>
+          <button className={styles.sidebarLink} onClick={handleLogout}>
             <div className={styles.icon}>
               <i className="fa-solid fa-right-from-bracket"></i>
             </div>
             Logout
-          </NavLink>
+          </button>
         </li>
       </ul>
     </nav>
