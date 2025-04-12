@@ -3,6 +3,8 @@ import httpx
 from utils.custom_logger import CustomLogger
 from services.mqtt_service import MQTTService
 
+from models.mongo_doc import ActionHistoryDocument
+
 class IOTService:
     def __init__(self):
         self.mqtt_service = MQTTService()
