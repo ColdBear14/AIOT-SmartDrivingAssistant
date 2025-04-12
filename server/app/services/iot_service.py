@@ -1,8 +1,12 @@
 import os
 import httpx
 from utils.custom_logger import CustomLogger
+from services.mqtt_service import MQTTService
 
 class IOTService:
+    def __init__(self):
+        self.mqtt_service = MQTTService()
+
     def _create_init_iot_system_date(self, uid: str = None):
         pass
 
@@ -12,37 +16,20 @@ class IOTService:
     def _update_iot_system_connection_detail(self, uid: str = None, connection_detail: dict = None):
         pass
     
-    async def _control_service(self, uid: str = None, service_type: str = None, value: int = None):
+    async def _control_service(self, uid: str = None, service_type: str = None, value: any = None):
         """
-        Send control request to IoT system to control a specific service.
+        Send control request to IoT system via MQTT.
         """
         try:
-            iot_server_url = os.getenv("IOT_SERVER_URL")
-            iot_server_port = os.getenv("IOT_SERVER_PORT")
+            command = {
+                "service_type": service_type,
+                "value": value
+            }
             
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    f"{iot_server_url}:{iot_server_port}/service",
-                    json={
-                        "user_id": uid,
-                        "service_type": service_type,
-                        "value": value
-                    }
-                )
-                
-                CustomLogger().get_logger().info(f"Control service response: {response.status_code}")
-                return response.status_code == 200
+            success = self.mqtt_service.send_control_command(uid, command)
+            CustomLogger().get_logger().info(f"Control service response: {success}")
+            return success
                 
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to control service: {e}")
             return False
-    
-    def _send_slider_data(self, uid: str = None, value: str = None):
-        """
-        Send slider data to iotsystem.
-        """        
-        try:
-            # Send slider data to IOTSystem
-            IOTSystem().recieveData(uid, value)
-        except Exception as e:
-            return None
