@@ -13,6 +13,14 @@ from services.webcam import VideoCam
 WAIT_TIME = 5.0
 EAR_THRESHOLD = 0.25 
 
+FIELD_ACCESS = {
+    'air_cond_service': ('humid','temp'),
+    'dist_service': 'dis',
+    'headlight_service': 'lux',
+    'drowsiness_service': 'camera',
+    'drowsiness_threshold': 'wait_time',
+}
+
 class IOTSystem:
     _instance = None
 
@@ -141,26 +149,27 @@ class IOTSystem:
         if len(splitData) < 2:
             return
         sensor_type, value = splitData[0], splitData[1]
-        CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
         if self.states[sensor_type]:
-            sensor_map = {
-                "temp": "temperature",
-                "humid": "humidity",
-                "lux": "bright",
-                "dis": "distance"
-            }
-
-            try:
-                doc: dict = {
-                    'uid': str(uid),
-                    'sensor_type': sensor_type.lower(), 
-                    'value': float(value)
+            CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
+            if self.states[sensor_type]:
+                sensor_map = {
+                    "temp": "temperature",
+                    "humid": "humidity",
+                    "lux": "bright",
+                    "dis": "distance"
                 }
 
-                Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
-            except ValueError:
-                # print(f"Invalid data format: {sensor_type} -> {value}")
-                CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
+                try:
+                    doc: dict = {
+                        'uid': str(uid),
+                        'sensor_type': sensor_type.lower(), 
+                        'value': float(value)
+                    }
+
+                    Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
+                except ValueError:
+                    # print(f"Invalid data format: {sensor_type} -> {value}")
+                    CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
 
     async def start_webcam(self,uid):
         # call to database for user preferences
@@ -190,16 +199,42 @@ class IOTSystem:
             
         else:
             CustomLogger().get_logger().warning("Webcam not initialized.")
+    async def _resolve_service(self, uid):
+        try:
+            services = Database()._instance.get_services_doc_by_id(uid,False)
+            if services is None:
+                CustomLogger().get_logger().info("No services found for this user.")
+                return None
             
+            for service in services:
+                convert_service = FIELD_ACCESS.get(service,None)
+                if convert_service is not None:
+                    raise ValueError(f"Invalid service type: {service}")
+                if isinstance(convert_service, tuple):
+                    for convert in convert_service:
+                        self.states[convert] = service['value']
+                        
+                elif convert_service in ['lux','dis','camera']:
+                    self.states[convert_service] = service['value']
+                else:
+                    self.videocam.set_time_threshold(service['value'])
+            
+        except Exception as e:
+            CustomLogger().get_logger().exception(f"Error resolving service: {e}")
+            return None
+        
     async def start_system(self, uid):
         if not self.running:
             self.running = True
+            
+            await self._resolve_service(uid)
+            
             asyncio.create_task(self.readSerial(uid))
             asyncio.create_task(self.sendSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
-            
-            asyncio.create_task(self.start_webcam(uid))
-            CustomLogger().get_logger().info("Webcam System started.")
+            if self.states['camera']:
+                asyncio.create_task(self.start_webcam(uid))
+                CustomLogger().get_logger().info("Webcam System started.")
         else:
             # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")

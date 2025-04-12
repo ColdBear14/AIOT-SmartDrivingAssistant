@@ -50,6 +50,12 @@ class Database:
         CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
+    def get_services_doc_by_id(self, id, is_one):
+        if is_one:
+            return self.get_services_status_collection().find_one({'uid': id})
+        else:
+            return self.get_services_status_collection().find({'uid': id})
+        
     def get_sensor_collection(self):
         return self.db.get_collection('environment_sensor')
     

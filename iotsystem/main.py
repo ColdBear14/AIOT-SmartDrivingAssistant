@@ -33,7 +33,6 @@ async def stop_system():
 @app.post("/service")
 async def control_service(request: ControlServiceRequest):
     try:
-        print(request)
         success = await IOTSystem()._instance.control_service(
             request.user_id,
             request.service_type,
