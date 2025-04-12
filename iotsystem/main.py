@@ -30,22 +30,35 @@ async def stop_system():
     CustomLogger().get_logger().info("System turned OFF")
     return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
 
-@app.post("/service/control")
+@app.post("/service")
 async def control_service(request: ControlServiceRequest):
     try:
         success = await IOTSystem()._instance.control_service(
             request.service_type,
             request.value
         )
+
         if success:
             CustomLogger().get_logger().info(f"Service {request.service_type} controlled successfully")
-            return JSONResponse(content={"message": "Service controlled successfully"}, status_code=200)
+
+            return JSONResponse(
+                content={"message": "Service controlled successfully"},
+                status_code=200
+            )
+        
         else:
             CustomLogger().get_logger().info(f"Failed to control service {request.service_type}")
-            return JSONResponse(content={"message": "Failed to control service"}, status_code=500)
+            return JSONResponse(
+                content={"message": "Failed to control service"},
+                status_code=500
+            )
+        
     except Exception as e:
         CustomLogger().get_logger().error(f"Error controlling service: {e}")
-        return JSONResponse(content={"message": "Error controlling service"}, status_code=500)
+        return JSONResponse(
+            content={"message": "Internal server error", "detail": "Error controlling service"},
+            status_code=500
+        )
 
 if __name__ == '__main__':
     import uvicorn

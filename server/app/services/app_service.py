@@ -1,6 +1,6 @@
 from services.database import Database
-from models.request import SensorDataRequest, ServiceConfigRequest
-from models.mongo_doc import ServiceConfigDocument
+from models.request import ActionHistoryRequest, SensorDataRequest, ServicesStatusRequest
+from models.mongo_doc import ServicesStatusDocument
 
 class AppService:
     FIELD_UID = "uid"
@@ -11,12 +11,12 @@ class AppService:
     def _create_init_service_config_data(self, uid: str = None):
         init_service_config_data = {}
 
-        init_service_config_data[ServiceConfigDocument.FIELD_UID] = uid if uid else ""
+        init_service_config_data[ServicesStatusDocument.FIELD_UID] = uid if uid else ""
 
-        for field in ServiceConfigDocument.ALL_SEVICE_FIELDS:
+        for field in ServicesStatusDocument.ALL_SEVICE_FIELDS:
             init_service_config_data[field] = "off"
 
-        for field in ServiceConfigDocument.ALL_VALUE_FIELDS:
+        for field in ServicesStatusDocument.ALL_VALUE_FIELDS:
             init_service_config_data[field] = 0
 
         return init_service_config_data
@@ -38,7 +38,7 @@ class AppService:
 
         return data
 
-    def _get_sensor_data(self, uid: str = None, request: SensorDataRequest = None) -> list:
+    def _get_sensors_data(self, uid: str = None, request: SensorDataRequest = None) -> list:
         """
         Get the newest sensor data for a specific user and multiple sensor types.
         """
@@ -52,39 +52,55 @@ class AppService:
 
         return data
     
-    def _get_service_config(self, uid: str = None):
+    def _get_services_status(self, uid: str = None):
         '''
             Get user config from the database by user id string.
         '''
-        user_config = Database()._instance.get_service_config_collection().find_one({'uid': uid})
+        services_status = Database()._instance.get_services_status_collection().find_one({'uid': uid})
         
-        if not user_config:
+        if not services_status:
             raise Exception("Service config not find")
         
         data = {}
-        for key in ServiceConfigDocument.ALL_SEVICE_FIELDS:
-            data[key] = user_config[key]
+        for key in ServicesStatusDocument.ALL_SEVICE_FIELDS:
+            data[key] = services_status[key]
 
-        for key in ServiceConfigDocument.ALL_VALUE_FIELDS:
-            data[key] = user_config[key]
+        for key in ServicesStatusDocument.ALL_VALUE_FIELDS:
+            data[key] = services_status[key]
 
         return data
 
-    def _update_service_config(self, uid: str = None, user_config_request: ServiceConfigRequest = None):
-        '''
-            Update user config in the database by user id string and UserConfigRequest object.
-        '''
-        update_data = user_config_request.dict(exclude_unset=True)
+    # def _update_service_config(self, uid: str = None, user_config_request: ServiceConfigRequest = None):
+    #     '''
+    #         Update user config in the database by user id string and UserConfigRequest object.
+    #     '''
+    #     update_data = user_config_request.dict(exclude_unset=True)
 
-        if update_data == {}:
-            raise Exception("No data to update")
+    #     if update_data == {}:
+    #         raise Exception("No data to update")
         
-        result = Database()._instance.get_service_config_collection().update_one(
-            {'uid': uid},
-            {'$set': update_data}
+    #     result = Database()._instance.get_service_config_collection().update_one(
+    #         {'uid': uid},
+    #         {'$set': update_data}
+    #     )
+    #     if result.modified_count == 0:
+    #         raise Exception("No service config updated")
+        
+    def _get_action_history(self, request: ActionHistoryRequest = None, uid: str = None):
+        service_type = request.service_type
+        amt = request.amt
+
+        action_history = Database()._instance.get_action_history_collection().find(
+            {
+                "uid": uid,
+                "service_type": service_type
+            },
+            sort=[(self.FIELD_TIMESTAMP, -1)],  # Sort by timestamp in descending order
+            limit=amt
         )
-        if result.modified_count == 0:
-            raise Exception("No service config updated")
-        
-    def _get_history(self, uid: str = None):
-        pass
+
+        data = []
+        for action in action_history:
+            data.append(action)
+
+        return data

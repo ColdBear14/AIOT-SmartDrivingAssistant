@@ -50,10 +50,6 @@ async def turn_off(request: Request, uid: str = Depends(get_user_id)):
         else:
             return JSONResponse(content={"message": "Failed to stop system"}, status_code=500)
 
-@router.get('/status')
-async def get_status():
-    pass
-
 @router.get("/connection")
 async def get_connection_detail(uid = Depends(get_user_id)):
     pass
@@ -63,7 +59,7 @@ async def update_connection_detail(uid = Depends(get_user_id)):
     pass
 
 @router.patch("/service")
-async def control_service(request: ControlServiceRequest, uid = Depends(get_user_id)):
+async def toggle_service(request: ControlServiceRequest, uid = Depends(get_user_id)):
     """
     Redirect to IoT system's endpoint to control services value base on current mode.
     """
@@ -74,7 +70,10 @@ async def control_service(request: ControlServiceRequest, uid = Depends(get_user
         for service_name, value in service_data.items():
             # Convert names like air_cond_temp to air_cond_service
             service_type = service_name.replace('_temp', '_service').replace('_brightness', '_service').replace('_threshold', '_service')
-            result = await IOTService()._control_service(uid, service_type, value)
+
+            CustomLogger().get_logger().info(f"Control service: {service_type}, value: {value}")
+
+            result = await IOTService()._toggle_service(uid, service_type, value)
             success = success or result
             
         if success:
@@ -94,19 +93,3 @@ async def control_service(request: ControlServiceRequest, uid = Depends(get_user
             content={"message": "Internal server error", "detail": str(e)},
             status_code=500
         )
-    
-@router.post('/slider')
-async def post_data(request: Request):
-    uid = request.state.user_id
-    data = await request.json()
-    CustomLogger().get_logger().info(f"Received slider data: {data}")
-
-    if 'slider_value' not in data:
-        return JSONResponse(content={"message": "Invalid slider data"}, status_code=400)
-
-    try:
-        IOTService()._send_slider_data(uid, data['slider_value'])
-        return JSONResponse(content={"message": "Slider value sent successfully"}, status_code=200)
-    except Exception as e:
-        return JSONResponse(content={"message": "Failed to send slider value"}, status_code=500)
-

@@ -190,7 +190,9 @@ class IOTSystem:
         if not self.writer:
             CustomLogger().get_logger().warning("No serial connection available")
             return False
-            
+        
+# TODO: Create command to control a specific service based on service_type and value
+    # Example command: !air_cond:1#
         command = f"!{service_type}:"
         if isinstance(value, str):
             # Handle on/off states
@@ -201,14 +203,55 @@ class IOTSystem:
         else:
             command += "1"  # Default ON value
         command += "#"
+    # End example!
             
         try:
             self.writer.write(command.encode())
+
+            if isinstance(value, str):
+                # Handle on/off states
+                pass
+            
+            else:
+                # Handle numeric values
+                pass
+
             CustomLogger().get_logger().info(f"Service command sent: {command}")
             return True
+
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to send service command: {e}")
-            return False
+            raise e
+        
+    async def write_action_history(self, uid: str = None, service_type: str = None, value: int = None):
+        try:
+            action = {
+                "uid": uid,
+                "service_type": service_type,
+                "description": f'{service_type} set to {value}'
+            }
+
+            Database()._instance._add_doc_with_timestamp('action_history', action)
+        except Exception as e:
+            CustomLogger().get_logger().error(f"Failed to write action history: {e}")
+            raise e
+        
+    async def update_service_status(self, uid: str = None, service: str = None, status: str = None):
+        try:
+            Database()._instance.get_services_status_collection().update_one(
+                {
+                    "uid": uid
+                },
+                {
+                    "$set": {
+                        service: status
+                    }
+                }
+            )
+
+        except Exception as e:
+            CustomLogger().get_logger().error(f"Failed to update service status: {e}")
+            raise e
 
 if __name__ == "__main__":
     CustomLogger().get_logger().info("IOT System: __main__")

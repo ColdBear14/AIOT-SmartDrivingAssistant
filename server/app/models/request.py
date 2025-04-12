@@ -1,6 +1,8 @@
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
+
+from mongo_doc import ServicesStatusDocument
     
 class UserRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]*$")
@@ -22,7 +24,7 @@ class ServiceMode(str, Enum):
     ON = "on"
     OFF = "off"
 
-class ServiceConfigRequest(BaseModel):
+class ServicesStatusRequest(BaseModel):
     air_cond_service: Optional[ServiceMode] = None
     drowsiness_service: Optional[ServiceMode] = None
     headlight_service: Optional[ServiceMode] = None
@@ -30,8 +32,12 @@ class ServiceConfigRequest(BaseModel):
     humid_service: Optional[ServiceMode] = None
 
 class ControlServiceRequest(BaseModel):
-    air_cond_temp: Optional[int] = None
-    headlight_brightness: Optional[int] = None
-    drowsiness_threshold: Optional[int] = None
-    dist_threshold: Optional[int] = None
-    humid_threshold: Optional[int] = None
+    air_cond_temp: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
+    headlight_brightness: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
+    drowsiness_threshold: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
+    dist_threshold: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
+    humid_threshold: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
+
+class ActionHistoryRequest(BaseModel):
+    service_type: Literal["air_cond_service", "drowsiness_service", "headlight_service", "dist_service", "humid_service"] = Field(...)
+    amt: Optional[int] = 0

@@ -11,7 +11,8 @@ class Database:
     FIELD_USER_COLLECTION = "user"
     FIELD_USER_CONFIG_COLLECTION = "user_config"
     FIELD_ENV_SENSOR_COLLECTION = "environment_sensor"
-    FIELD_SERVICE_CONFIG_COLLECTION = "service_config"
+    FIELD_SERVICES_STATUS_COLLECTION = "services_status"
+    FIELD_ACTION_HISTORY_COLLECTION = "action_history"
 
     _instance = None
     _cache_data = {}
@@ -66,8 +67,11 @@ class Database:
     def get_env_sensor_collection(self):
         return self.db.get_collection(self.FIELD_ENV_SENSOR_COLLECTION)
     
-    def get_service_config_collection(self):
-        return self.db.get_collection(self.FIELD_SERVICE_CONFIG_COLLECTION)
+    def get_services_status_collection(self):
+        return self.db.get_collection(self.FIELD_SERVICES_STATUS_COLLECTION)
+    
+    def get_action_history_collection(self):
+        return self.db.get_collection(self.FIELD_ACTION_HISTORY_COLLECTION)
 # End IOT region
 
 if __name__ == '__main__':

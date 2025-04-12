@@ -11,7 +11,7 @@ from services.database import Database
 from services.user_service import UserService
 
 from models.request import UserRequest
-from models.mongo_doc import UserDocument, ServiceConfigDocument
+from models.mongo_doc import UserDocument, ServicesStatusDocument
 
 from datetime import datetime, timedelta
 # import redis
@@ -69,7 +69,7 @@ class AuthService:
                 
                 init_service_config_data = IOTService()._create_init_service_config_data(str(user_result.inserted_id))
 
-                service_config_result = Database()._instance.get_service_config_collection().insert_one(
+                service_config_result = Database()._instance.get_services_status_collection().insert_one(
                     init_service_config_data,
                     session=session
                 )

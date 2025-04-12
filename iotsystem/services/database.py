@@ -50,13 +50,14 @@ class Database:
         CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
-# Sensor region
     def get_sensor_collection(self):
         return self.db.get_collection('environment_sensor')
     
     def get_sensor_doc_by_id(self, id):
         return self.get_sensor_collection().find_one({'_id': id})
-# End sensor region
+    
+    def get_services_status_collection(self):
+        return self.db.get_collection('services_status')
 
 if __name__ == '__main__':
     def test():

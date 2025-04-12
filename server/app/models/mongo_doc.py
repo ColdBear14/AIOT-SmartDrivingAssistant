@@ -12,10 +12,7 @@ class UserDocument():
 
     ALL_BASIC_FIELDS = [FIELD_NAME, FIELD_EMAIL, FIELD_PHONE, FIELD_ADDRESS, FIELD_DOB]
 
-class UserConfigDocument():
-    pass
-
-class ServiceConfigDocument():
+class ServicesStatusDocument():
     FIELD_UID = 'uid'
 
     FIELD_AIR_COND_SERVICE = 'air_cond_service'
