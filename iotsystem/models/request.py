@@ -13,4 +13,3 @@ class ControlServiceRequest(BaseModel):
     user_id: str = Field(...)
     service_type: str = Field(...)  # e.g., "air_cond", "headlight", "drowsiness", etc.
     value: Optional[Union[str,int,float]] = None  # for service-specific values like temperature, brightness, etc.
-

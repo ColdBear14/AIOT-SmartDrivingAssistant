@@ -55,11 +55,11 @@ class IOTSystem:
             CustomLogger().get_logger().info("No serial device found.")
         
         self.states = {
-            'humid': False,
-            'temp': False,
-            'headlight': False,
-            'camera': False,
-            'dis': False
+            'humid': True,
+            'temp': True,
+            'headlight': True,
+            'camera': True,
+            'dis': True
         }
         self.videocam = VideoCam()
 
@@ -173,18 +173,7 @@ class IOTSystem:
 
     async def start_webcam(self,uid):
         # call to database for user preferences
-        try:
-            doc = await self.db.get_user_doc_by_id(uid)
-            if doc is None:
-                thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
-                
-            else:
-                thresholds = doc.get('camera', {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True})
-                
-        except Exception as e:
-            CustomLogger().get_logger().exception(f"Error getting user {uid} from database: {e}")
-            thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
-        
+        thresholds = {'show_window': True}
         if self.videocam:
             await self.videocam.start_webcam(thresholds)
             last_alarm_state = None
@@ -229,8 +218,8 @@ class IOTSystem:
             
             await self._resolve_service(uid)
             
-            asyncio.create_task(self.readSerial(uid))
-            asyncio.create_task(self.sendSerial(uid))
+            # asyncio.create_task(self.readSerial(uid))
+            # asyncio.create_task(self.sendSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
             if self.states['camera']:
                 asyncio.create_task(self.start_webcam(uid))
@@ -244,7 +233,15 @@ class IOTSystem:
         self.videocam.stop()
         # print("IOT System stopped.")
         CustomLogger().get_logger().info("IOT System stopped.")
-
+    async def stop_camera(self,uid):
+        if self.videocam:
+            self.videocam.stop()
+            CustomLogger().get_logger().info("Webcam System stopped.")
+        else:
+            CustomLogger().get_logger().warning("Webcam not initialized.")
+    async def start_camera(self,uid):
+        asyncio.create_task(self.start_webcam(uid))
+        CustomLogger().get_logger().info("Webcam System started.")
     async def control_service(self,uid:str, service_type: str, value: any = None):
         """Controls a service state (on/off) and sends appropriate commands to YOLO"""
         # if not self.writer:
