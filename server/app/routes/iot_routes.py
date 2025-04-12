@@ -73,7 +73,7 @@ async def toggle_service(request: ControlServiceRequest, uid = Depends(get_user_
 
             CustomLogger().get_logger().info(f"Control service: {service_type}, value: {value}")
 
-            result = await IOTService()._toggle_service(uid, service_type, value)
+            result = await IOTService()._control_service(uid, service_type, value)
             success = success or result
             
         if success:

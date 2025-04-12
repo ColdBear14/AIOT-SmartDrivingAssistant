@@ -12,7 +12,7 @@ class IOTService:
     def _update_iot_system_connection_detail(self, uid: str = None, connection_detail: dict = None):
         pass
     
-    async def _toggle_service(self, uid: str = None, service_type: str = None, value: int = None):
+    async def _control_service(self, uid: str = None, service_type: str = None, value: int = None):
         """
         Send control request to IoT system to control a specific service.
         """
@@ -36,6 +36,7 @@ class IOTService:
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to control service: {e}")
             return False
+    
     def _send_slider_data(self, uid: str = None, value: str = None):
         """
         Send slider data to iotsystem.
