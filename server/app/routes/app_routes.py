@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import JSONResponse
 
 from services.app_service import AppService
-from models.request import ActionHistoryRequest, SensorDataRequest, ServicesStatusRequest
+from models.request import ActionHistoryRequest, SensorDataRequest
 
 router = APIRouter()
 

@@ -2,8 +2,10 @@ import os
 import httpx
 from utils.custom_logger import CustomLogger
 
+from models.mongo_doc import ActionHistoryDocument
+
 class IOTService:
-    def _create_init_iot_system_date(self, uid: str = None):
+    def _create_init_iot_system_data(self, uid: str = None):
         pass
 
     def _get_iot_system_connection_detail(self, uid: str = None):
@@ -36,13 +38,3 @@ class IOTService:
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to control service: {e}")
             return False
-    
-    def _send_slider_data(self, uid: str = None, value: str = None):
-        """
-        Send slider data to iotsystem.
-        """        
-        try:
-            # Send slider data to IOTSystem
-            IOTSystem().recieveData(uid, value)
-        except Exception as e:
-            return None

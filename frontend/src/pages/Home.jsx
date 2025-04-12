@@ -9,7 +9,6 @@ import { UserContext } from '../hooks/UserContext.jsx';
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
 import debounce from 'lodash.debounce';
-import "../components/Home/Slider.css"
 
 import { SensorTypes, IOTServices } from '../utils/IOTServices.jsx';
 
@@ -57,7 +56,7 @@ const Home = () => {
       // Join filtered sensor types with comma
       const sensorTypesParam = activeSensorTypes.join(',');
       
-      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/app/data`, {
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/app/sensor_data`, {
         params: {
           sensor_types: sensorTypesParam
         },
@@ -140,19 +139,30 @@ const Home = () => {
     }));
   
     try {
-      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider`, {
-        name: sliderName, 
-        min: value[0],
-        max: value[1],
-      }, {
+      const data = {
+        service_type: sliderName,
+        value: value[1]
+      }
+
+      const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/service`, data, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      console.log(`Slider ${sliderName} API Response:`, response.data);
+
+      if (response) {
+        console.log(`Slider ${sliderName} API Response:`, response.data);
+
+        // TODO: handle API response
+
+      }
+
     } catch (error) {
       console.error(`Slider ${sliderName} Error:`, error.response?.data || error.message);
+      
+      // TODO: handle error
+
     }
   }, 300);
 
@@ -274,7 +284,7 @@ const Home = () => {
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Manual' ? 'bg-primary' : 'bg-secondary'} me-2 mb-2 px-3 py-1`}>Manual</button>
                 <button className={`rounded btn text-white ${data.airConditioner?.status === 'Off' ? 'bg-primary' : 'bg-secondary'} mb-2 px-3 py-1`}>Off</button>
               </div>
-              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValues.airConditioner} step={20} onInput={(value) => handleSliderChange(value,'airConditioner')}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+              <div className="title">Air conditioning</div><RangeSlider className="Air conditioning"  value={sliderValues.airConditioner} step={20} onInput={(value) => handleSliderChange(value, IOTServices.air_cond_service)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
               <p>Current Value: {sliderValues.airConditioner[1]}</p>
             </div>
           </div>
@@ -339,7 +349,7 @@ const Home = () => {
                   </button>
 
                 </div>
-                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValues.headLight} max={4} onInput={(value) => handleSliderChange(value,'headLight')}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
+                <div className="title">Headlight </div><RangeSlider className="Headlight"  value={sliderValues.headLight} max={4} onInput={(value) => handleSliderChange(value, IOTServices.headlight_service)}  thumbsDisabled={[true, false]}  rangeSlideDisabled={true}/>
                 <p>Current Value: {sliderValues.headLight[1]}</p>
               </div>
             </div>

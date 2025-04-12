@@ -1,8 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
-
-from mongo_doc import ServicesStatusDocument
     
 class UserRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]*$")

@@ -69,7 +69,7 @@ async def login(user: UserRequest, response: Response):
     except Exception as e:
         if e.args[0] == "Invalid credentials":
             return JSONResponse(
-                content={"message": "Invalid credentials"},
+                content={"message": e.args[0], "detail": "Invalid username or password"},
                 status_code=401
             )
         else:

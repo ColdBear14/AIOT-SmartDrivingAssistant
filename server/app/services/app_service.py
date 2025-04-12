@@ -1,5 +1,5 @@
 from services.database import Database
-from models.request import ActionHistoryRequest, SensorDataRequest, ServicesStatusRequest
+from models.request import ActionHistoryRequest, SensorDataRequest
 from models.mongo_doc import ServicesStatusDocument
 
 class AppService:
@@ -8,18 +8,18 @@ class AppService:
     FIELD_TIMESTAMP = "timestamp"
     FIELD_VAL = "val"
 
-    def _create_init_service_config_data(self, uid: str = None):
-        init_service_config_data = {}
+    def _create_init_services_status_data(self, uid: str = None):
+        init_services_status_data = {}
 
-        init_service_config_data[ServicesStatusDocument.FIELD_UID] = uid if uid else ""
+        init_services_status_data[ServicesStatusDocument.FIELD_UID] = uid if uid else ""
 
         for field in ServicesStatusDocument.ALL_SEVICE_FIELDS:
-            init_service_config_data[field] = "off"
+            init_services_status_data[field] = "off"
 
         for field in ServicesStatusDocument.ALL_VALUE_FIELDS:
-            init_service_config_data[field] = 0
+            init_services_status_data[field] = 0
 
-        return init_service_config_data
+        return init_services_status_data
 
     def _get_newest_sensor_data(self, uid: str = None, sensor_type: str = None) -> dict:
         """
