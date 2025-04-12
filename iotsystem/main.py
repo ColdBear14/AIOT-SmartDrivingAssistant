@@ -33,7 +33,9 @@ async def stop_system():
 @app.post("/service")
 async def control_service(request: ControlServiceRequest):
     try:
+        print(request)
         success = await IOTSystem()._instance.control_service(
+            request.user_id,
             request.service_type,
             request.value
         )
@@ -63,4 +65,4 @@ async def control_service(request: ControlServiceRequest):
 if __name__ == '__main__':
     import uvicorn
     CustomLogger().get_logger().info("App: __main__")
-    uvicorn.run("iotsystem.main:app", host='127.0.0.1', port=9000,reload=True)
+    uvicorn.run("iotsystem.main:app", host='0.0.0.0', port=8000,reload=True)

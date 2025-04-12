@@ -39,7 +39,10 @@ class VideoCam:
         
         self.show_window = True
         self.running = False
-
+        self.thresholds = {
+            'ear_threshold' : 0.25,
+            'wait_time': 5.0
+        }
         self.executor = ThreadPoolExecutor(max_workers=1)
         
         self.db = Database()._instance
@@ -71,18 +74,16 @@ class VideoCam:
                 frame_h
             )
             
-            if ear < thresholds['ear_threshold']:
+            if ear < self.thresholds['ear_threshold']:
                 end_time = time.perf_counter()
                 
                 self.state['drowsy_time'] += end_time - self.state['start_time']
                 self.state['start_time'] = end_time
                 self.state['color'] = self.RED
 
-                if self.state['drowsy_time'] >= thresholds['wait_time']:
-                    ... 
-                    #TODO: implement alarm mechanic
+                if self.state['drowsy_time'] >= self.thresholds['wait_time']:
                     self.state['play_alarm'] = True
-                    winsound.Beep(1000, 500)
+                    #TODO: implement alarm mechanic
                     
                     
             else:
@@ -108,6 +109,8 @@ class VideoCam:
             self._webcam_loop, thresholds, mirror
         )    
     
+    async def set_time_threshold(self,time):
+        self.thresholds['wait_time'] = time
         
         
     def _webcam_loop(self,thresholds:dict,mirror= False):

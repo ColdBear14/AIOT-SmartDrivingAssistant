@@ -8,7 +8,6 @@ import asyncio
 import serial_asyncio
 from services.database import Database
 import serial.tools.list_ports
-
 from services.webcam import VideoCam
 
 WAIT_TIME = 5.0
@@ -46,8 +45,14 @@ class IOTSystem:
         else:
             # print("No serial device found.")
             CustomLogger().get_logger().info("No serial device found.")
-
         
+        self.states = {
+            'humid': False,
+            'temp': False,
+            'headlight': False,
+            'camera': False,
+            'dis': False
+        }
         self.videocam = VideoCam()
 
     async def connect_serial(self, port):
@@ -137,25 +142,25 @@ class IOTSystem:
             return
         sensor_type, value = splitData[0], splitData[1]
         CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
-
-        sensor_map = {
-            "temp": "temperature",
-            "humid": "humidity",
-            "lux": "bright",
-            "dis": "distance"
-        }
-
-        try:
-            doc: dict = {
-                'uid': str(uid),
-                'sensor_type': sensor_type.lower(), 
-                'value': float(value)
+        if self.states[sensor_type]:
+            sensor_map = {
+                "temp": "temperature",
+                "humid": "humidity",
+                "lux": "bright",
+                "dis": "distance"
             }
 
-            Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
-        except ValueError:
-            # print(f"Invalid data format: {sensor_type} -> {value}")
-            CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
+            try:
+                doc: dict = {
+                    'uid': str(uid),
+                    'sensor_type': sensor_type.lower(), 
+                    'value': float(value)
+                }
+
+                Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
+            except ValueError:
+                # print(f"Invalid data format: {sensor_type} -> {value}")
+                CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
 
     async def start_webcam(self,uid):
         # call to database for user preferences
@@ -205,43 +210,87 @@ class IOTSystem:
         # print("IOT System stopped.")
         CustomLogger().get_logger().info("IOT System stopped.")
 
-    async def control_service(self, service_type: str, value: any = None):
-        """Controls a service state (on/off) and sends appropriate commands to Arduino"""
-        if not self.writer:
-            CustomLogger().get_logger().warning("No serial connection available")
-            return False
+    async def control_service(self,uid:str, service_type: str, value: any = None):
+        """Controls a service state (on/off) and sends appropriate commands to YOLO"""
+        # if not self.writer:
+        #     CustomLogger().get_logger().warning("No serial connection available")
+        #     return False
         
 # TODO: Create command to control a specific service based on service_type and value
     # Example command: !air_cond:1#
-        command = f"!{service_type}:"
+        if service_type.startswith("air_cond"):
+            convert_type = ["humid","temp"], "fan"
+        elif service_type.startswith("headlight"):
+            convert_type = ["lux"],None
+        elif service_type.startswith("drowsiness"):
+            convert_type = ["camera"],None
+        elif service_type.startswith("dist"):
+            convert_type = ["dis"],None
+        else:
+            CustomLogger().get_logger().warning(f"Unknown service type: {service_type}")
+            return False
+
+        write_type = service_type
+        
         if isinstance(value, str):
             # Handle on/off states
-            command += "1" if value.lower() == "on" else "0"
+            for cvt in convert_type[0]:
+                self.states[cvt] = value.lower() == "on"
+            
         elif value is not None:
             # Handle numeric values for thresholds, temperature, etc.
-            command += str(value)
-        else:
-            command += "1"  # Default ON value
-        command += "#"
-    # End example!
-            
-        try:
-            self.writer.write(command.encode())
-
-            if isinstance(value, str):
-                # Handle on/off states
-                pass
-            
+            if service_type.startswith('drowsiness'):
+                print(self.videocam)
+                await self.videocam.set_time_threshold(value)
+                write_type = 'drowsiness_threshold'
+            elif convert_type[1] is not None:
+                command = f'{convert_type[1]}:{value}#'
+                write_type = 'air_cond_temp'
             else:
-                # Handle numeric values
-                pass
-
-            CustomLogger().get_logger().info(f"Service command sent: {command}")
-            return True
-
+                command = f'{convert_type[0][0]}:{value}#'
+                write_type = 'headlight_brightness'
+        else:
+            command = f'{convert_type[0][0]}:1#'
+            write_type = 'air_cond_temp' if convert_type[0][0] == 'temp' else 'headlight_brightness'
+        
+    # End example!
+        try :
+            if 'command' in locals():
+                self.writer.write(command.encode())
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to send service command: {e}")
             raise e
+
+        session = Database()._instance.client.start_session()
+        try:
+            with session.start_transaction():
+                try:
+                    await self.update_service_status(
+                        uid=uid,
+                        service=write_type,
+                        status=value if value is not None else 1
+                    )
+                except Exception as e:
+                    CustomLogger().get_logger().error(f"Failed to update service status: {e}")
+                    raise e
+                # write action history to database
+                try:
+                    await self.write_action_history(
+                        uid=uid,
+                        service_type=write_type,
+                        value=value if value is not None else 1
+                    )
+                except Exception as e:
+                    CustomLogger().get_logger().error(f"Failed to write action history: {e}")
+                    raise e
+                
+        except Exception as e:
+            session.abort_transaction()
+            CustomLogger().get_logger().error(f"Failed to update service status: {e}")
+            raise e
+
+        return True
+            
         
     async def write_action_history(self, uid: str = None, service_type: str = None, value: int = None):
         try:
@@ -258,16 +307,32 @@ class IOTSystem:
         
     async def update_service_status(self, uid: str = None, service: str = None, status: str = None):
         try:
-            Database()._instance.get_services_status_collection().update_one(
+            result = Database()._instance.get_services_status_collection().find_one(
                 {
                     "uid": uid
-                },
-                {
-                    "$set": {
-                        service: status
-                    }
                 }
             )
+
+            if not result:
+                # If no document found, create a new one
+                await Database()._instance._add_doc_with_timestamp(
+                    'services_status',
+                    {
+                        "uid": uid,
+                        service: status
+                    }
+                )
+            else:
+                Database()._instance.get_services_status_collection().update_one(
+                    {
+                        "uid": uid
+                    },
+                    {
+                        "$set": {
+                            service: status
+                        }
+                    }
+                )
 
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to update service status: {e}")
