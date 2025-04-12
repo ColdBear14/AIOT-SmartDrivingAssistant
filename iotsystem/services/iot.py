@@ -160,7 +160,7 @@ class IOTSystem:
     async def start_webcam(self,uid):
         # call to database for user preferences
         try:
-            doc = await self.db.get_user_doc_by_id(uid)
+            doc = await Database()._init_database.get_user_doc_by_id(uid)
             if doc is None:
                 thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
                 
@@ -180,7 +180,7 @@ class IOTSystem:
                     _,play_alarm = self.videocam.last_frame
                     if play_alarm != last_alarm_state:
                         value = '1' if play_alarm else '0'
-                        self.db._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
+                        Database()._instance._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
                         last_alarm_state = play_alarm                    
             
         else:
@@ -190,6 +190,7 @@ class IOTSystem:
         if not self.running:
             self.running = True
             asyncio.create_task(self.readSerial(uid))
+
             asyncio.create_task(self.sendSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
             

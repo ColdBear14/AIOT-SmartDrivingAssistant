@@ -50,6 +50,12 @@ class Database:
         CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
+    def get_user_collection(self):
+        return self.db.get_collection('user')
+    
+    def get_user_doc_by_id(self, id):
+        return self.get_user_collection().find_one({'_id': id})
+    
     def get_sensor_collection(self):
         return self.db.get_collection('environment_sensor')
     

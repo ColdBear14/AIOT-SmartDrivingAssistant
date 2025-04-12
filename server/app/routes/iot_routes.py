@@ -59,7 +59,7 @@ async def update_connection_detail(uid = Depends(get_user_id)):
     pass
 
 @router.patch("/service")
-async def toggle_service(request: ControlServiceRequest, uid = Depends(get_user_id)):
+async def control_service(request: ControlServiceRequest, uid = Depends(get_user_id)):
     """
     Redirect to IoT system's endpoint to control services value base on current mode.
     """
