@@ -36,3 +36,12 @@ class IOTService:
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to control service: {e}")
             return False
+    def _send_slider_data(self, uid: str = None, value: str = None):
+        """
+        Send slider data to iotsystem.
+        """        
+        try:
+            # Send slider data to IOTSystem
+            IOTSystem().recieveData(uid, value)
+        except Exception as e:
+            return None

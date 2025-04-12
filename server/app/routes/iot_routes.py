@@ -93,3 +93,20 @@ async def toggle_service(request: ControlServiceRequest, uid = Depends(get_user_
             content={"message": "Internal server error", "detail": str(e)},
             status_code=500
         )
+
+@router.post('/slider')
+async def post_slider1_data(request: Request):
+    uid = request.state.user_id
+    data = await request.json()
+
+    CustomLogger().get_logger().info(f"Received slider data: {data}")
+
+    if 'min' not in data or 'max' not in data:
+        raise HTTPException(status_code=400, detail="Invalid slider data")
+
+    try:
+        # Assuming _send_slider_data can handle min and max values
+        IOTService()._send_slider_data(uid, data)
+        return JSONResponse(content={"message": "Slider values sent successfully"}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error")

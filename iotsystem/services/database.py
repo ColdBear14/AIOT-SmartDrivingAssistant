@@ -59,6 +59,11 @@ class Database:
     def get_services_status_collection(self):
         return self.db.get_collection('services_status')
 
+# Device region
+    def get_device_collection(self):
+        return self.db.get_collection('device_control')
+# End device region
+
 if __name__ == '__main__':
     def test():
         CustomLogger().get_logger().info("Database: Test mode.")
