@@ -9,7 +9,7 @@ import serial_asyncio
 from services.database import Database
 import serial.tools.list_ports
 
-from services.webcam import VideoCam
+# from services.webcam import VideoCam
 
 WAIT_TIME = 5.0
 EAR_THRESHOLD = 0.25 
@@ -48,7 +48,7 @@ class IOTSystem:
             CustomLogger().get_logger().info("No serial device found.")
 
         
-        self.videocam = VideoCam()
+        # self.videocam = VideoCam()
 
     async def connect_serial(self, port):
         """Async function to connect to serial device."""
@@ -71,6 +71,8 @@ class IOTSystem:
             }
         except Exception as e:
             return None
+        self.writer.write(f"!{device_name}:{device_value}#".encode())
+        CustomLogger().get_logger().info(f"Sending data: !{device_name}:{device_value}#")
         # Add the document to the database
         Database()._instance._add_doc_with_timestamp('device_control', doc)
 
@@ -151,40 +153,55 @@ class IOTSystem:
                 'sensor_type': sensor_type.lower(), 
                 'value': float(value)
             }
+            # xử lý dữ liệu từ cảm biến vượt quá ngượng - nếu quá ngưỡng gửi cảnh báo
+            if sensor_type in sensor_map:
+                threshold = 0.0
+                if sensor_type == "temp":
+                    threshold = 50.0
+                elif sensor_type == "humid":
+                    threshold = 80.0
+                elif sensor_type == "lux":
+                    threshold = 10.0
+                elif sensor_type == "dis":
+                    threshold = 30.0
+                if float(value) > threshold:
+                    self.write_action_history(uid, 'alarm', 1)
+                    self.writer.write(f"!alarm:1#".encode())
+                
 
             Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
         except ValueError:
             # print(f"Invalid data format: {sensor_type} -> {value}")
             CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
 
-    async def start_webcam(self,uid):
-        # call to database for user preferences
-        try:
-            doc = await self.db.get_user_doc_by_id(uid)
-            if doc is None:
-                thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
+    # async def start_webcam(self,uid):
+    #     # call to database for user preferences
+    #     try:
+    #         doc = await self.db.get_user_doc_by_id(uid)
+    #         if doc is None:
+    #             thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
                 
-            else:
-                thresholds = doc.get('camera', {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True})
+    #         else:
+    #             thresholds = doc.get('camera', {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True})
                 
-        except Exception as e:
-            CustomLogger().get_logger().exception(f"Error getting user {uid} from database: {e}")
-            thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
+    #     except Exception as e:
+    #         CustomLogger().get_logger().exception(f"Error getting user {uid} from database: {e}")
+    #         thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
         
-        if self.videocam:
-            await self.videocam.start_webcam(thresholds)
-            last_alarm_state = None
-            while self.videocam.running:
-                await asyncio.sleep(0.1)
-                if hasattr(self.videocam,'last_frame'):
-                    _,play_alarm = self.videocam.last_frame
-                    if play_alarm != last_alarm_state:
-                        value = '1' if play_alarm else '0'
-                        self.db._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
-                        last_alarm_state = play_alarm                    
+    #     if self.videocam:
+    #         await self.videocam.start_webcam(thresholds)
+    #         last_alarm_state = None
+    #         while self.videocam.running:
+    #             await asyncio.sleep(0.1)
+    #             if hasattr(self.videocam,'last_frame'):
+    #                 _,play_alarm = self.videocam.last_frame
+    #                 if play_alarm != last_alarm_state:
+    #                     value = '1' if play_alarm else '0'
+    #                     self.db._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
+    #                     last_alarm_state = play_alarm                    
             
-        else:
-            CustomLogger().get_logger().warning("Webcam not initialized.")
+    #     else:
+    #         CustomLogger().get_logger().warning("Webcam not initialized.")
             
     async def start_system(self, uid):
         if not self.running:
@@ -193,7 +210,7 @@ class IOTSystem:
             asyncio.create_task(self.sendSerial(uid))
             # CustomLogger().get_logger().info("Sensor System started.")
             
-            asyncio.create_task(self.start_webcam(uid))
+            #asyncio.create_task(self.start_webcam(uid))
             CustomLogger().get_logger().info("Webcam System started.")
         else:
             # print("System already running.")

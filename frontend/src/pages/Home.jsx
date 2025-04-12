@@ -142,7 +142,6 @@ const Home = () => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_SERVER_URL}/iot/slider`, {
         name: sliderName, 
-        min: value[0],
         max: value[1],
       }, {
         withCredentials: true,
