@@ -183,7 +183,19 @@ class IOTSystem:
                     _,play_alarm = self.videocam.last_frame
                     if play_alarm != last_alarm_state:
                         value = '1' if play_alarm else '0'
-                        self.db._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
+                        
+                        try:
+                            # TODO alarm to be update to yolobit
+                            self.writer.write(f"!alarm:{value}#".encode())
+                            
+                            await self.write_action_history(
+                                uid=uid,
+                                service_type='alarm',
+                                value=value
+                            )
+                        except Exception as e:
+                            CustomLogger().get_logger().exception(f"Failed to update alarm status: {e}")
+                            raise e
                         last_alarm_state = play_alarm                    
             
         else:
