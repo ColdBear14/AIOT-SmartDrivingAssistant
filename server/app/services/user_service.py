@@ -29,6 +29,12 @@ class UserService:
         init_user_data[UserDocument.FIELD_AVATAR] = ""
 
         return init_user_data
+    
+    def _check_user_exist(self, uid: str = None) -> bool:
+        '''
+            Check if a user exists in the database by user id string.
+        '''
+        return Database()._instance.get_user_collection().find_one({'_id': self._get_object_id(uid)})
 
     def _get_user_info(self, uid: str = None) -> dict:
         '''

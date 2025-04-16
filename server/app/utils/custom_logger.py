@@ -25,6 +25,7 @@ class CustomLogger:
             # Suppress debug logs from MongoDB driver
             logging.getLogger("motor").setLevel(logging.WARNING)
             logging.getLogger("pymongo").setLevel(logging.WARNING)
+            logging.getLogger("websockets").setLevel(logging.WARNING)
 
             self.log = logging.getLogger()
 
