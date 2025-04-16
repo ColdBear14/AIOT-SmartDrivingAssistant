@@ -34,7 +34,7 @@ async def get_sensor_data(
                 sensor_data['timestamp'] = sensor_data['timestamp'].isoformat()
 
         sensor_types_str = ', '.join(request.sensor_types)
-        CustomLogger().get_logger().info(f"Retrieved data for {sensor_types_str} types.")
+        CustomLogger()._get_logger().info(f"Retrieved data for {sensor_types_str} types.")
 
         return JSONResponse(
             content=data,
@@ -54,7 +54,7 @@ async def get_services_status(uid = Depends(get_user_id)):
     try:
         service_config_data = AppService()._get_services_status(uid)
 
-        CustomLogger().get_logger().info(f"User config: {service_config_data}")
+        CustomLogger()._get_logger().info(f"User config: {service_config_data}")
 
         return JSONResponse(
             content=service_config_data,
@@ -114,7 +114,7 @@ async def get_action_history(request: ActionHistoryRequest, uid = Depends(get_us
     try:
         data = AppService()._get_action_history(uid, request)
 
-        CustomLogger().get_logger().info(f"Retrieved action history for {request.service_type} of user {uid}")
+        CustomLogger()._get_logger().info(f"Retrieved action history for {request.service_type} of user {uid}")
 
         return JSONResponse(
             content=data,

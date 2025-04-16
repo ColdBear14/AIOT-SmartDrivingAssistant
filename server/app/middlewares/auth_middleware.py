@@ -20,17 +20,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Skip authentication for whitelisted paths
         if request.url.path in self.whitelist:
-            CustomLogger().get_logger().info(f"AuthMiddleware: Skip authentication for {request.url.path}")
+            CustomLogger()._get_logger().info(f"AuthMiddleware: Skip authentication for {request.url.path}")
             return await call_next(request)
         
         elif request.method == "OPTIONS":
-            CustomLogger().get_logger().info(f"AuthMiddleware: Preflight request for {request.method}-{request.url.path}")
+            CustomLogger()._get_logger().info(f"AuthMiddleware: Preflight request for {request.method}-{request.url.path}")
             return await call_next(request)
 
         # Check for session token in cookies
         session_id = request.cookies.get("session_id")
         if not session_id:
-            CustomLogger().get_logger().info("AuthMiddleware: Missing session token")
+            CustomLogger()._get_logger().info("AuthMiddleware: Missing session token")
             return JSONResponse(
                 content={"detail": "Unauthorized: Missing session token"},
                 status_code=401
@@ -52,7 +52,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 status_code=401
             )
 
-        CustomLogger().get_logger().info(f"AuthMiddleware: User info: {user['username']} - {str(user['_id'])}")
+        CustomLogger()._get_logger().info(f"AuthMiddleware: User info: {user['username']} - {str(user['_id'])}")
 
         user_id = user["_id"]
         expiration_time = user["session_expiration"]
@@ -61,7 +61,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Check session expiration
         if expiration_time.timestamp() - datetime.now().timestamp() < timedelta(minutes=10).total_seconds():
-            CustomLogger().get_logger().info(f"AuthMiddleware: Refreshing session for user {user_id}")
+            CustomLogger()._get_logger().info(f"AuthMiddleware: Refreshing session for user {user_id}")
             new_session_id = AuthService()._create_session(user_id)
 
             if not new_session_id:

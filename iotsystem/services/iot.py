@@ -222,14 +222,14 @@ class IOTSystem:
             # Start serial communication
             port = self._get_port()
             if port != "None":
-                await self._connect_serial(port)
+                # await self._connect_serial(port)
 
-                asyncio.create_task(self._read_serial(uid))
-                asyncio.create_task(self._send_serial(uid))
+                # asyncio.create_task(self._read_serial(uid))
+                # asyncio.create_task(self._send_serial(uid))
                 CustomLogger().get_logger().info("Sensor System started.")
             
             if self.states['camera']:
-                asyncio.create_task(self._start_webcam(uid))
+                # asyncio.create_task(self._start_webcam(uid))
                 CustomLogger().get_logger().info("Webcam System started.")
 
         else:
@@ -237,7 +237,7 @@ class IOTSystem:
 
     async def _stop_system(self):
         self.running = False
-        self.videocam.stop()
+        # self.videocam.stop()
             
         CustomLogger().get_logger().info("IOT System stopped.")
 
@@ -257,7 +257,7 @@ class IOTSystem:
         """Controls a service state and sends commands to Arduino"""
         if not self.writer:
             CustomLogger().get_logger().warning("No serial connection available")
-            raise Exception("No serial connection available")
+            # raise Exception("No serial connection available")
             
         if service_type.startswith("air_cond"):
             convert_type = ["humid","temp"], "fan"
@@ -281,8 +281,8 @@ class IOTSystem:
         elif value is not None:
             # Handle numeric values for thresholds, temperature, etc.
             if service_type.startswith('drowsiness'):
-                print(self.videocam)
-                await self.videocam.set_time_threshold(value)
+                # print(self.videocam)
+                # await self.videocam.set_time_threshold(value)
                 write_type = 'drowsiness_threshold'
 
             elif convert_type[1] is not None:
@@ -299,7 +299,8 @@ class IOTSystem:
         
         try :
             if 'command' in locals():
-                self.writer.write(command.encode())
+                # self.writer.write(command.encode())
+                CustomLogger().get_logger().info(f"Execute command \"{command}\"")
 
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to execute command: {e}")
@@ -307,20 +308,22 @@ class IOTSystem:
 
         session = Database()._instance.client.start_session()
         try:
-            with session.start_transaction():
-                Database()._instance.update_service_status(
-                    uid=uid,
-                    service_type=write_type,
-                    value=value if value is not None else 1,
-                    session=session
-                )
+            # with session.start_transaction():
+            #     Database()._instance.update_service_status(
+            #         uid=uid,
+            #         service_type=write_type,
+            #         value=value if value is not None else 1,
+            #         session=session
+            #     )
                 
-                Database()._instance.write_action_history(
-                    uid=uid,
-                    service_type=write_type,
-                    value=value if value is not None else 1,
-                    session=session
-                )
+            #     Database()._instance.write_action_history(
+            #         uid=uid,
+            #         service_type=write_type,
+            #         value=value if value is not None else 1,
+            #         session=session
+            #     )
+
+            CustomLogger().get_logger().info(f"Updated service status document and action history")
 
         except Exception as e:
             session.abort_transaction()

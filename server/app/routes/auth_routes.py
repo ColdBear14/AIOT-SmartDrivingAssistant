@@ -15,7 +15,7 @@ router = APIRouter()
 async def register(user: UserRequest):
     try:
         result = AuthService()._register(user)
-        CustomLogger().get_logger().info(f"Register result: {result}")
+        CustomLogger()._get_logger().info(f"Register result: {result}")
 
         if result:
             return JSONResponse(
@@ -50,7 +50,7 @@ async def register(user: UserRequest):
 async def login(user: UserRequest, response: Response):
     try:
         session_id, userid = AuthService()._authenticate(user)
-        CustomLogger().get_logger().info(f"Login result: {session_id} - {userid}")
+        CustomLogger()._get_logger().info(f"Login result: {session_id} - {userid}")
 
         if session_id:
             response = JSONResponse(
@@ -89,7 +89,7 @@ async def logout(request: Request, response: Response):
 
     try:
         result = AuthService()._del_session(session_id)
-        CustomLogger().get_logger().info(f"Logout result: {result}")
+        CustomLogger()._get_logger().info(f"Logout result: {result}")
         if result:
             response = JSONResponse(
                 content={"message": "Logout successful"},

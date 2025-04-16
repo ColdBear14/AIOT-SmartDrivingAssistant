@@ -16,28 +16,26 @@ def get_user_id(request: Request) -> str:
 @router.websocket("/ws/{device_id}")
 async def websocket_endpoint(websocket: WebSocket, device_id: str = None):
     if device_id is None:
-        return JSONResponse(content={"message": "Device ID is required"}, status_code=400)
+        await websocket.close(code=1008, reason="Device ID is required")
+        return
     
     if websocket is None:
-        return JSONResponse(content={"message": "WebSocket is required"}, status_code=400)
+        await websocket.close(code=1008, reason="WebSocket is required")
+        return
     
-    CustomLogger().get_logger().info(f"WebSocket connect request from: {device_id}")
+    CustomLogger()._get_logger().info(f"WebSocket connect request from: {device_id}")
     
     check_user = UserService()._check_user_exist(device_id)
     if not check_user:
-        return JSONResponse(
-            content={
-                "message": "User not find",
-                "detail": "Can not find any user for that device id"
-            },
-            status_code=404
-        )
+        await websocket.close(code=1008, reason="User not found for device ID")
+        return
     
     try:
         await IOTService()._establish_connection(device_id, websocket)
 
     except Exception as e:
-        CustomLogger().get_logger().error(f"Websocket error: {e}")
+        CustomLogger()._get_logger().error(f"Websocket error: {e}")
+        await websocket.close(code=1011, reason="Internal server error")
 
 @router.post('/on')
 async def turn_on(request: Request, uid: str = Depends(get_user_id)):
@@ -45,20 +43,16 @@ async def turn_on(request: Request, uid: str = Depends(get_user_id)):
         return JSONResponse(content={"message": "Invalid request"}, status_code=400)
 
     try:
-        result = await IOTService()._control_iot_system(
-            uid=uid,
+        await IOTService()._control_iot_system(
+            device_id=uid,
             target="system",
             command="on"
         )
         
-        if result:
-            return JSONResponse(content={"message": "System started successfully"}, status_code=200)
-        else:
-            return JSONResponse(content={"message": "Failed to start system"}, status_code=500)
+        return JSONResponse(content={"message": "System started successfully"}, status_code=200)
             
     except Exception as e:
-        CustomLogger().get_logger().error(f"Error starting system: {e}")
-        return JSONResponse(content={"message": "Failed to start system", "detail": str(e)}, status_code=500)
+        return JSONResponse(content={"message": "Failed to start system", "detail": str(e.args[0])}, status_code=500)
 
 @router.post('/off')
 async def turn_off(request: Request, uid: str = Depends(get_user_id)):
@@ -66,20 +60,17 @@ async def turn_off(request: Request, uid: str = Depends(get_user_id)):
         return JSONResponse(content={"message": "Invalid request"}, status_code=400)
     
     try:
-        result = await IOTService()._control_iot_system(
-            uid=uid,
+        await IOTService()._control_iot_system(
+            device_id=uid,
             target="system",
             command="off"
         )
         
-        if result:
-            return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
-        else:
-            return JSONResponse(content={"message": "Failed to stop system"}, status_code=500)
+        return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
             
     except Exception as e:
-        CustomLogger().get_logger().error(f"Error stopping system: {e}")
-        return JSONResponse(content={"message": "Failed to stop system", "detail": str(e)}, status_code=500)
+        CustomLogger()._get_logger().error(f"Error stopping system: {e}")
+        return JSONResponse(content={"message": "Failed to stop system", "detail": str(e.args[0])}, status_code=500)
 
 @router.patch("/service")
 async def control_service(request: ControlServiceRequest, uid = Depends(get_user_id)):
@@ -90,29 +81,22 @@ async def control_service(request: ControlServiceRequest, uid = Depends(get_user
         service_type = request.service_type
         value = request.value
 
-        CustomLogger().get_logger().info(f"Control service: {service_type}, value: {value}")
+        CustomLogger()._get_logger().info(f"Control service: {service_type}, value: {value}")
 
-        result = await IOTService()._control_iot_system(
-            uid=uid,
+        await IOTService()._control_iot_system(
+            device_id=uid,
             target=service_type,
             command=value
         )
             
-        if result:
-            return JSONResponse(
-                content={"message": "Service control request processed successfully"},
-                status_code=200
-            )
-        else:
-            return JSONResponse(
-                content={"message": "Failed to control service"},
-                status_code=500
-            )
+        return JSONResponse(
+            content={"message": "Service control request processed successfully"},
+            status_code=200
+        )
             
     except Exception as e:
-        CustomLogger().get_logger().error(f"Error controlling service: {e}")
         return JSONResponse(
-            content={"message": "Internal server error", "detail": str(e)},
+            content={"message": "Failed to control service", "detail": str(e.args[0])},
             status_code=500
         )
  

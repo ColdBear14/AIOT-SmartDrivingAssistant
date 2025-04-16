@@ -37,7 +37,7 @@ app.include_router(app_router, prefix='/app')
 #     CustomLogger().get_logger().info(route)
 
 if __name__ == '__main__':
-    CustomLogger().get_logger().info("main: __main__")
+    CustomLogger()._get_logger().info("main: __main__")
 
     import uvicorn
     uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)

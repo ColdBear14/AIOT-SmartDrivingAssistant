@@ -33,11 +33,11 @@ class Database:
                 self.FIELD_MONGO_URL: os.getenv("MONGODB_URL"),
                 self.FIELD_DB_NAME: os.getenv("MONGODB_DB_NAME")
             }
-            CustomLogger().get_logger().info("Database's config: " + str(config))
+            CustomLogger()._get_logger().info("Database's config: " + str(config))
 
         self.client = MongoClient(config[self.FIELD_MONGO_URL])
         if test_mode:
-            CustomLogger().get_logger().info("Database: Test mode.")
+            CustomLogger()._get_logger().info("Database: Test mode.")
             self.db = self.client['test']
         else:
             self.db = self.client[config[self.FIELD_DB_NAME]]
@@ -52,7 +52,7 @@ class Database:
 
         result = self.db[collection_name].insert_one(document)
 
-        CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
+        CustomLogger()._get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
 # User region
@@ -76,7 +76,7 @@ class Database:
 
 if __name__ == '__main__':
     def test():
-        CustomLogger().get_logger().info("Database: Test mode.")
+        CustomLogger()._get_logger().info("Database: Test mode.")
 
         document = {
             'key': 'value'

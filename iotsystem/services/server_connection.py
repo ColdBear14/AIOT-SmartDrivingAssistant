@@ -19,6 +19,8 @@ class ServerConnection:
     FIELD_VALUE = "value"
     FIELD_STATUS = "status"
     FIELD_MESSAGE = "message"
+    FIELD_SERVICE_TYPE = "service_type"
+    FIELD_NOTIFICATION = "notification"
 
     def __new__(cls, uid: str = None):
         if not cls._instance:
@@ -54,7 +56,7 @@ class ServerConnection:
 
                     # Run send and receive tasks concurrently
                     await asyncio.gather(
-                        self._receive_server_commands(websocket),
+                        self._handle_server_commands(websocket),
                         self._track_device_status(websocket)
                     )
 
@@ -72,7 +74,7 @@ class ServerConnection:
                 CustomLogger().get_logger().error(f"Unexpected error: {e}")
                 break
 
-    async def _receive_server_commands(self, websocket):
+    async def _handle_server_commands(self, websocket):
         try:
             async for message in websocket:
                 data = json.loads(message)
@@ -134,7 +136,7 @@ class ServerConnection:
 
                     elif command[self.FIELD_VALUE] == "off":
                         try:
-                            await IOTSystem()._stop_system(self.uid)
+                            await IOTSystem()._stop_system()
                             CustomLogger().get_logger().info(f"Stopped system {self.uid}")
 
                             await websocket.send(json.dumps(
@@ -161,8 +163,7 @@ class ServerConnection:
                     try:
                         await IOTSystem()._control_service(self.uid, command[self.FIELD_TARGET], command[self.FIELD_VALUE])
  
-                        CustomLogger().get_logger().info(
-                            f"Controlled service {command['target']} with value {command['value']}")
+                        CustomLogger().get_logger().info(f"Controlled service {command['target']} with value {command['value']}")
 
                         await websocket.send(json.dumps(
                             {
@@ -194,5 +195,19 @@ class ServerConnection:
     async def _track_device_status(self, websocket):
         pass
 
-    async def _send_data_to_server(self, websocket, data: dict = None):
-        pass
+    async def _send_notification_to_server(self, websocket, service_type: str, notification: str):
+        try:
+            await websocket.send(json.dumps(
+                {
+                    self.FIELD_DEVICE_ID: self.uid,
+                    self.FIELD_SERVICE_TYPE: service_type,
+                    self.FIELD_NOTIFICATION: notification
+                }
+            ))
+            CustomLogger().get_logger().info(f"Sent notification to server: {notification}")
+
+        except websockets.exceptions.ConnectionClosed:
+            CustomLogger().get_logger().warning("Cannot send notification: WebSocket connection closed")
+
+        except Exception as e:
+            CustomLogger().get_logger().error(f"Failed to send notification: {e}")
