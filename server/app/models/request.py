@@ -30,12 +30,14 @@ class ServicesStatusRequest(BaseModel):
     humid_service: Optional[ServiceMode] = None
 
 class ControlServiceRequest(BaseModel):
-    air_cond_temp: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
-    headlight_brightness: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
-    drowsiness_threshold: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
-    dist_threshold: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
-    humid_threshold: Optional[str] = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
+    service_type: Literal["air_cond_service", "drowsiness_service", "headlight_service", "dist_service", "humid_service"] = Field(...)
+    value: str = Field(..., pattern=r"^(on|off|[1-9][0-9]*\.?[0-9]*)$")
 
 class ActionHistoryRequest(BaseModel):
     service_type: Literal["air_cond_service", "drowsiness_service", "headlight_service", "dist_service", "humid_service"] = Field(...)
     amt: Optional[int] = 0
+
+class IoTDataResponse(BaseModel):
+    device_id: str
+    command_id: str
+    status: str

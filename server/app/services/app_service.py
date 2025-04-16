@@ -1,3 +1,4 @@
+from utils.custom_logger import CustomLogger
 from services.database import Database
 from models.request import ActionHistoryRequest, SensorDataRequest
 from models.mongo_doc import ServicesStatusDocument
@@ -22,9 +23,7 @@ class AppService:
         return init_services_status_data
 
     def _get_newest_sensor_data(self, uid: str = None, sensor_type: str = None) -> dict:
-        """
-        Get the newest sensor data for a specific user and sensor type.
-        """
+        """Get the newest sensor data for a specific user and sensor type."""
         data = Database()._instance.get_env_sensor_collection().find_one(
             {
                 self.FIELD_UID: uid,
@@ -39,9 +38,7 @@ class AppService:
         return data
 
     def _get_sensors_data(self, uid: str = None, request: SensorDataRequest = None) -> list:
-        """
-        Get the newest sensor data for a specific user and multiple sensor types.
-        """
+        """Get the newest sensor data for multiple sensor types."""
         sensor_types = request.sensor_types
 
         data = []
@@ -53,9 +50,7 @@ class AppService:
         return data
     
     def _get_services_status(self, uid: str = None):
-        '''
-            Get user config from the database by user id string.
-        '''
+        """Get services status from the database by user id."""
         services_status = Database()._instance.get_services_status_collection().find_one({'uid': uid})
         
         if not services_status:
@@ -69,22 +64,6 @@ class AppService:
             data[key] = services_status[key]
 
         return data
-
-    # def _update_service_config(self, uid: str = None, user_config_request: ServiceConfigRequest = None):
-    #     '''
-    #         Update user config in the database by user id string and UserConfigRequest object.
-    #     '''
-    #     update_data = user_config_request.dict(exclude_unset=True)
-
-    #     if update_data == {}:
-    #         raise Exception("No data to update")
-        
-    #     result = Database()._instance.get_service_config_collection().update_one(
-    #         {'uid': uid},
-    #         {'$set': update_data}
-    #     )
-    #     if result.modified_count == 0:
-    #         raise Exception("No service config updated")
         
     def _get_action_history(self, request: ActionHistoryRequest = None, uid: str = None):
         service_type = request.service_type

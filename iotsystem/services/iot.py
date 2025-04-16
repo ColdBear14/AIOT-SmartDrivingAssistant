@@ -1,13 +1,13 @@
-from datetime import datetime
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# import sys
+# import os
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.custom_logger import CustomLogger
 
 import asyncio
 import serial_asyncio
-from services.database import Database
 import serial.tools.list_ports
+
+from services.database import Database
 from services.webcam import VideoCam
 
 WAIT_TIME = 5.0
@@ -37,12 +37,11 @@ class IOTSystem:
 
     def _init_iot_system(self, config=None):
         CustomLogger().get_logger().info("IOT System initialized.")
-
         self.db = Database()._instance
         self.running = False
         self.reader = None
         self.writer = None
-        
+
         port = self.getPort()
         if port != "None":
             try:
@@ -67,25 +66,9 @@ class IOTSystem:
         """Async function to connect to serial device."""
         try:
             self.reader, self.writer = await serial_asyncio.open_serial_connection(url=port, baudrate=115200)
-            # print(f"Connected to serial: {port}")
             CustomLogger().get_logger().info(f"Connected to serial: {port}")
         except Exception as e:
-            # print(f"Failed to connect to serial: {e}")
             CustomLogger().get_logger().exception(f"Failed to connect to serial: {e}")
-
-    def recieveData(self, uid, data):
-        device_name = data.get("name")
-        device_value = data.get("max")
-        try:
-            doc = {
-                'uid': str(uid),
-                'device_type': str(device_name).lower(), 
-                'value': float(device_value)
-            }
-        except Exception as e:
-            return None
-        # Add the document to the database
-        Database()._instance._add_doc_with_timestamp('device_control', doc)
 
     async def sendSerial(self, uid):
         """Sends data to the serial device."""
@@ -128,7 +111,6 @@ class IOTSystem:
     async def readSerial(self, uid):
         """Reads and processes serial data asynchronously."""
         if not self.reader:
-            # print("No serial connection available.")
             CustomLogger().get_logger().warning("No serial connection available.")
             return
         while self.running:
@@ -138,7 +120,6 @@ class IOTSystem:
                 CustomLogger().get_logger().info(f"Received data: {data}")
                 await self.processData(data, str(uid))
             except Exception as e:
-                # print(f"Serial read error: {e}")
                 CustomLogger().get_logger().exception(f"Serial read error: {e}")
             await asyncio.sleep(1)
 
@@ -168,8 +149,8 @@ class IOTSystem:
 
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
                 except ValueError:
-                    # print(f"Invalid data format: {sensor_type} -> {value}")
                     CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
+                    Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
 
     async def start_webcam(self,uid):
         # call to database for user preferences
@@ -227,41 +208,46 @@ class IOTSystem:
     async def start_system(self, uid):
         if not self.running:
             self.running = True
+
+            # Start serial communication
+            port = self.getPort()
+            if port != "None":
+                await self.connect_serial(port)
+
+                asyncio.create_task(self.readSerial(uid))
+                asyncio.create_task(self.sendSerial(uid))
+                CustomLogger().get_logger().info("Sensor System started.")
             
-            await self._resolve_service(uid)
-            
-            # asyncio.create_task(self.readSerial(uid))
-            # asyncio.create_task(self.sendSerial(uid))
-            # CustomLogger().get_logger().info("Sensor System started.")
             if self.states['camera']:
                 asyncio.create_task(self.start_webcam(uid))
                 CustomLogger().get_logger().info("Webcam System started.")
+
         else:
-            # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")
 
     async def stop_system(self):
         self.running = False
         self.videocam.stop()
-        # print("IOT System stopped.")
+            
         CustomLogger().get_logger().info("IOT System stopped.")
+
     async def stop_camera(self,uid):
         if self.videocam:
             self.videocam.stop()
             CustomLogger().get_logger().info("Webcam System stopped.")
         else:
             CustomLogger().get_logger().warning("Webcam not initialized.")
+
     async def start_camera(self,uid):
         asyncio.create_task(self.start_webcam(uid))
         CustomLogger().get_logger().info("Webcam System started.")
-    async def control_service(self,uid:str, service_type: str, value: any = None):
-        """Controls a service state (on/off) and sends appropriate commands to YOLO"""
-        # if not self.writer:
-        #     CustomLogger().get_logger().warning("No serial connection available")
-        #     return False
-        
-# TODO: Create command to control a specific service based on service_type and value
-    # Example command: !air_cond:1#
+
+    async def control_service(self, service_type: str, value: any = None):
+        """Controls a service state and sends commands to Arduino"""
+        if not self.writer:
+            CustomLogger().get_logger().warning("No serial connection available")
+            return False
+            
         if service_type.startswith("air_cond"):
             convert_type = ["humid","temp"], "fan"
         elif service_type.startswith("headlight"):
@@ -387,7 +373,6 @@ if __name__ == "__main__":
     CustomLogger().get_logger().info("IOT System: __main__")
     iotsystem = IOTSystem()._instance
     asyncio.run(iotsystem.start_system('123'))
-    
     
     time.sleep(20)
     
