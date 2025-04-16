@@ -45,7 +45,11 @@ async def turn_on(request: Request, uid: str = Depends(get_user_id)):
         return JSONResponse(content={"message": "Invalid request"}, status_code=400)
 
     try:
-        result = await IOTService()._control_iot_system(uid, "system", "on")
+        result = await IOTService()._control_iot_system(
+            uid=uid,
+            target="system",
+            command="on"
+        )
         
         if result:
             return JSONResponse(content={"message": "System started successfully"}, status_code=200)
@@ -62,7 +66,11 @@ async def turn_off(request: Request, uid: str = Depends(get_user_id)):
         return JSONResponse(content={"message": "Invalid request"}, status_code=400)
     
     try:
-        result = await IOTService()._control_iot_system(uid, "system", "off")
+        result = await IOTService()._control_iot_system(
+            uid=uid,
+            target="system",
+            command="off"
+        )
         
         if result:
             return JSONResponse(content={"message": "System stopped successfully"}, status_code=200)
@@ -84,7 +92,11 @@ async def control_service(request: ControlServiceRequest, uid = Depends(get_user
 
         CustomLogger().get_logger().info(f"Control service: {service_type}, value: {value}")
 
-        result = await IOTService()._control_iot_system(uid, service_type, value)
+        result = await IOTService()._control_iot_system(
+            uid=uid,
+            target=service_type,
+            command=value
+        )
             
         if result:
             return JSONResponse(

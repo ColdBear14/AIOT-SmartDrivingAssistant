@@ -11,6 +11,15 @@ from services.iot import IOTSystem
 class ServerConnection:
     _instance = None
 
+    FIELD_UID = "uid"
+    FIELD_DEVICE_ID = "device_id"
+    FIELD_COMMAND = "command"
+    FIELD_COMMAND_ID = "command_id"
+    FIELD_TARGET = "target"
+    FIELD_VALUE = "value"
+    FIELD_STATUS = "status"
+    FIELD_MESSAGE = "message"
+
     def __new__(cls, uid: str = None):
         if not cls._instance:
             cls._instance = super(ServerConnection, cls).__new__(cls)
@@ -24,14 +33,9 @@ class ServerConnection:
 
         if uid == None:
             self.connection_url = None
+
         else:
-            server_url = os.getenv('SERVER_URL')
-            # Convert http:// or https:// to ws:// or wss:// respectively
-            if server_url.startswith('https://'):
-                ws_url = 'wss://' + server_url[8:]
-            else:
-                ws_url = 'ws://' + server_url[7:] if server_url.startswith('http://') else 'ws://' + server_url
-            self.connection_url = f"{ws_url}/iot/ws/{uid}"
+            self.connection_url = f"{os.getenv("WEBSOCKETS_URL")}/{self.uid}"
 
     def _delete_server_connection(self):
         pass
@@ -41,7 +45,7 @@ class ServerConnection:
             raise Exception("User ID is required to connect to the server.")
 
         max_retries = 5
-        retry_delay = 5  # seconds
+        retry_delay = 5
 
         for attempt in range(max_retries):
             try:
@@ -56,8 +60,10 @@ class ServerConnection:
 
             except (websockets.exceptions.WebSocketException, ConnectionError) as e:
                 CustomLogger().get_logger().error(f"Connection failed (attempt {attempt + 1}/{max_retries}): {e}")
+
                 if attempt < max_retries - 1:
                     await asyncio.sleep(retry_delay)
+
                 else:
                     CustomLogger().get_logger().error("Max retries reached. Giving up.")
                     break
@@ -72,47 +78,111 @@ class ServerConnection:
                 data = json.loads(message)
                 CustomLogger().get_logger().info(f"Received command: {data}")
 
-                if not "command" in data or not "command_id" in data:
+                if not self.FIELD_COMMAND in data or not self.FIELD_COMMAND_ID in data:
+                    CustomLogger().get_logger().error(f"Invalid message: {data}")
+                    websocket.send(json.dumps(
+                        {
+                            self.FIELD_DEVICE_ID: "none",
+                            self.FIELD_COMMAND_ID: "none",
+                            self.FIELD_STATUS: "error",
+                            self.FIELD_MESSAGE: "Invalid message"
+                        }
+                    ))
                     continue
 
-                command = data["command"]
-                command_id = data["command_id"]
+                command = data[self.FIELD_COMMAND]
+                command_id = data[self.FIELD_COMMAND_ID]
 
-                if command["target"] == "system":
-                    if command["value"] == "on":
+                if not self.FIELD_TARGET in command or not self.FIELD_VALUE in command:
+                    CustomLogger().get_logger().error(f"Invalid command: {data}")
+                    websocket.send(json.dumps(
+                        {
+                            self.FIELD_DEVICE_ID: self.uid,
+                            self.FIELD_COMMAND_ID: command_id,
+                            self.FIELD_STATUS: "error",
+                            self.FIELD_MESSAGE: "Invalid command: Missing target or value"
+                        }
+                    ))
+                    continue
+
+                if command[self.FIELD_TARGET] == "system":
+                    if command[self.FIELD_VALUE] == "on":
                         try:
-                            await IOTSystem().start_system(self.uid)
-                            
+                            await IOTSystem()._start_system(self.uid)
                             CustomLogger().get_logger().info(f"Started system {self.uid}")
-                            await websocket.send(json.dumps({"device_id": self.uid, "command_id": command_id, "status": "success"}))
+
+                            await websocket.send(json.dumps(
+                                {
+                                    self.FIELD_DEVICE_ID: self.uid,
+                                    self.FIELD_COMMAND_ID: command_id,
+                                    self.FIELD_STATUS: "success"
+                                }
+                            ))
                         
                         except Exception as e:
-                            CustomLogger().get_logger().error(f"Failed to start system: {e}")
-                            await websocket.send(json.dumps({"device_id": self.uid, "command_id": command_id, "status": "fail"}))
+                            CustomLogger().get_logger().error(f"Failed to start system: {e.args[0]}")
+                            
+                            await websocket.send(json.dumps(
+                                {
+                                    self.FIELD_DEVICE_ID: self.uid,
+                                    self.FIELD_COMMAND_ID: command_id,
+                                    self.FIELD_STATUS: "fail",
+                                    self.FIELD_MESSAGE: str(e.args[0])
+                                }
+                            ))
                             continue
 
-                    elif command["value"] == "off":
+                    elif command[self.FIELD_VALUE] == "off":
                         try:
-                            await IOTSystem().stop_system(self.uid)
-
+                            await IOTSystem()._stop_system(self.uid)
                             CustomLogger().get_logger().info(f"Stopped system {self.uid}")
-                            await websocket.send(json.dumps({"device_id": self.uid, "command_id": command_id, "status": "success"}))
+
+                            await websocket.send(json.dumps(
+                                {
+                                    self.FIELD_DEVICE_ID: self.uid,
+                                    self.FIELD_COMMAND_ID: command_id,
+                                    self.FIELD_STATUS: "success"
+                                }
+                            ))
 
                         except Exception as e:
-                            CustomLogger().get_logger().error(f"Failed to stop system: {e}")
-                            await websocket.send(json.dumps({"device_id": self.uid, "command_id": command_id, "status": "fail"}))
+                            CustomLogger().get_logger().error(f"Failed to stop system: {e.args[0]}")
+                            await websocket.send(json.dumps(
+                                {
+                                    self.FIELD_DEVICE_ID: self.uid,
+                                    self.FIELD_COMMAND_ID: command_id,
+                                    self.FIELD_STATUS: "fail",
+                                    self.FIELD_MESSAGE: str(e.args[0])
+                                }
+                            ))
                             continue
                         
-                elif "service" in command["target"]:
+                elif "service" in command[self.FIELD_TARGET]:
                     try:
-                        await IOTSystem().control_service(command["target"], command["value"])
+                        await IOTSystem()._control_service(self.uid, command[self.FIELD_TARGET], command[self.FIELD_VALUE])
+ 
+                        CustomLogger().get_logger().info(
+                            f"Controlled service {command['target']} with value {command['value']}")
 
-                        CustomLogger().get_logger().info(f"Controlled service {command['target']} with value {command['value']}")
-                        await websocket.send(json.dumps({"device_id": self.uid, "command_id": command_id, "status": "success"}))
+                        await websocket.send(json.dumps(
+                            {
+                                self.FIELD_DEVICE_ID: self.uid,
+                                self.FIELD_COMMAND_ID: command_id,
+                                self.FIELD_STATUS: "success"
+                            }
+                        ))
 
                     except Exception as e:
-                        CustomLogger().get_logger().error(f"Failed to control service: {e}")
-                        await websocket.send(json.dumps({"device_id": self.uid, "command_id": command_id, "status": "fail"}))
+                        CustomLogger().get_logger().error(f"Failed to control service: {e.args[0]}")
+
+                        await websocket.send(json.dumps(
+                            {
+                                self.FIELD_DEVICE_ID: self.uid,
+                                self.FIELD_COMMAND_ID: command_id,
+                                self.FIELD_STATUS: "fail",
+                                self.FIELD_MESSAGE: str(e.args[0])
+                            }
+                        ))
                         continue
 
         except websockets.exceptions.ConnectionClosed:

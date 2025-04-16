@@ -1,9 +1,7 @@
 import asyncio
-import os
 import uuid
-import httpx
 
-from models.request import IoTDataResponse
+from models.request import IOTDataResponse
 from utils.custom_logger import CustomLogger
 
 from typing import Dict
@@ -11,6 +9,13 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 class IOTService:
     _instance = None
+
+    FIELD_COMMAND = "command"
+    FIELD_COMMAND_ID = "command_id"
+    FIELD_TARGET = "target"
+    FIELD_VALUE = "value"
+    FIELD_STATUS = "status"
+    FIELD_MESSAGE = "message"
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -26,6 +31,7 @@ class IOTService:
     async def _add_connected_iot_system(self, device_id: str, websocket: WebSocket):
         if device_id not in self.connected_iot_systems:
             await websocket.accept()
+            
             self.connected_iot_systems[device_id] = [websocket, "established"]
             self.pending_commands[device_id] = {}
             self.command_responses[device_id] = {}
@@ -44,14 +50,16 @@ class IOTService:
             while True:
                 data = await websocket.receive_json()
                 try:
-                    iot_data = IoTDataResponse(**data)
+                    iot_data = IOTDataResponse(**data)
+
                     if iot_data.device_id != device_id:
                         CustomLogger().get_logger().error(f"Device ID mismatch: {iot_data.device_id}")
                         await websocket.send_json({"error": "Device ID mismatch"})
                         continue
                     
-                    if "command_id" in data and "status" in data:
-                        command_id = data["command_id"]
+                    if self.FIELD_COMMAND_ID in data and self.FIELD_STATUS in data:
+                        command_id = data[self.FIELD_COMMAND_ID]
+
                         if device_id in self.pending_commands and command_id in self.pending_commands[device_id]:
                             # Store response and signal Event
                             self.command_responses[device_id][command_id] = data
@@ -65,14 +73,12 @@ class IOTService:
 
         except WebSocketDisconnect:
             CustomLogger().get_logger().info(f"Device \"{device_id}\" disconnected")
-            del self.connected_iot_systems[device_id]
 
         except Exception as e:
             CustomLogger().get_logger().error(f"Websocket error with device \"{device_id}\": {e}")
 
         finally:
-            if device_id in self.connected_iot_systems:
-                del self.connected_iot_systems[device_id]
+            self._cleanup_device(device_id)
 
     def _cleanup_device(self, device_id: str):
         """Clean up device state on disconnect."""
@@ -96,11 +102,11 @@ class IOTService:
         try:
             command_id = str(uuid.uuid4())
             data = {
-                "command": {
-                    "target": target,
-                    "value": command
+                self.FIELD_COMMAND: {
+                    self.FIELD_TARGET: target,
+                    self.FIELD_VALUE: command
                 },
-                "command_id": command_id
+                self.FIELD_COMMAND_ID: command_id
             }
 
             self.pending_commands[device_id][command_id] = asyncio.Event()
@@ -121,13 +127,12 @@ class IOTService:
                 response = self.command_responses[device_id][command_id]
                 self._cleanup_command(device_id, command_id)
 
-            # TODO: Handle response
-                if response.get("status") == "success":
+                if response.get(self.FIELD_STATUS) == "success":
                     CustomLogger().get_logger().info(f"Device \"{device_id}\" confirmed command \"{command_id}\"")
                     return True
                 
                 else:
-                    CustomLogger().get_logger().error(f"Device \"{device_id}\" response FAIL for command \"{command_id}\": {response}")
+                    CustomLogger().get_logger().error(f"Device \"{device_id}\" response FAIL for command \"{command_id}\": {response.get(self.FIELD_MESSAGE)}")
                     return False
                 
             else:

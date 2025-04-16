@@ -37,7 +37,13 @@ class ActionHistoryRequest(BaseModel):
     service_type: Literal["air_cond_service", "drowsiness_service", "headlight_service", "dist_service", "humid_service"] = Field(...)
     amt: Optional[int] = 0
 
-class IoTDataResponse(BaseModel):
+class IOTDataResponse(BaseModel):
     device_id: str
     command_id: str
     status: str
+    message: Optional[str]
+
+class IOTMessage(BaseModel):
+    device_id: str
+    service_type: Literal["air_cond_service", "drowsiness_service", "headlight_service", "dist_service", "humid_service"] = Field(...)
+    message: str

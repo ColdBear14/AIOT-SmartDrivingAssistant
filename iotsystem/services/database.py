@@ -1,6 +1,3 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.custom_logger import CustomLogger
 
 from pymongo import MongoClient
@@ -8,7 +5,14 @@ from datetime import datetime
 
 class Database:
     _instance = None
-    _cache_data = {}
+    
+    FIELD_SERVICES_STATUS_COLLECTION = "services_status"
+    FIELD_ACTION_HISTORY_COLLECTION = "action_history"
+
+    FIELD_UID = "uid"
+    FIELD_TIMESTAMP = "timestamp"
+    FIELD_SERVICE_TYPE = "service_type"
+    FIELD_DESCRIPTION = "description"
 
     def __new__(cls, config=None, test_mode=False):
         if cls._instance is None:
@@ -38,43 +42,63 @@ class Database:
             CustomLogger().get_logger().info(f"Database: Connected with database {self.db}.")
         self.collections = set()
 
-    def _add_doc_with_timestamp(self, collection_name=None, document=None):
+    def _add_doc_with_timestamp(self, collection_name=None, document=None, session=None):
         '''Add new document to collection with timestamp'''
         if collection_name is None or document is None:
             return None
         
-        document['timestamp'] = datetime.now()
+        document[self.FIELD_TIMESTAMP] = datetime.now()
 
         result = self.db[collection_name].insert_one(document)
 
         CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
-    def get_user_collection(self):
-        return self.db.get_collection('user')
-    
-    def get_user_doc_by_id(self, id):
-        return self.get_user_collection().find_one({'_id': id})
-        
-    def get_sensor_collection(self):
-        return self.db.get_collection('environment_sensor')
-    
-    def get_sensor_doc_by_id(self, id):
-        return self.get_sensor_collection().find_one({'_id': id})
-    
     def get_services_status_collection(self):
-        return self.db.get_collection('services_status')
+        return self.db.get_collection(self.FIELD_SERVICES_STATUS_COLLECTION)
     
-    def get_services_doc_by_id(self, id, is_one):
+    def get_services_status_doc_by_id(self, id, is_one):
         if is_one:
-            return self.get_services_status_collection().find_one({'uid': id})
+            return self.get_services_status_collection().find_one(
+                {
+                    self.FIELD_UID: id
+                }
+            )
         else:
-            return self.get_services_status_collection().find({'uid': id})
+            return self.get_services_status_collection().find(
+                {
+                    self.FIELD_UID: id
+                }
+            )
+        
+    def get_action_history_collection(self):
+        return self.db.get_collection(self.FIELD_ACTION_HISTORY_COLLECTION)
+    
+    def write_action_history(self, uid: str, service_type: str, value: any, session):
+        action = {
+            self.FIELD_UID: uid,
+            self.FIELD_SERVICE_TYPE: service_type,
+            self.FIELD_DESCRIPTION: f"{service_type} set to {value}"
+        }
 
-# Device region
-    def get_device_collection(self):
-        return self.db.get_collection('device_control')
-# End device region
+        self._add_doc_with_timestamp(
+            collection_name=self.FIELD_ACTION_HISTORY_COLLECTION,
+            document=action,
+            session=session
+        )
+        
+    def update_service_status(self, uid: str, service_type: str, value: str, session):
+        self.get_services_status_collection().update_one(
+            {
+                self.FIELD_UID: uid
+            },
+            {
+                "$set": {
+                    service_type: value
+                }
+            },
+            session=session
+        )
 
 if __name__ == '__main__':
     def test():

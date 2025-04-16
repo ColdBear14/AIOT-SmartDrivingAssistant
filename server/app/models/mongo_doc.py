@@ -30,8 +30,9 @@ class ServicesStatusDocument():
 
 class ActionHistoryDocument():
     FIELD_UID = 'uid'
+
     FIELD_SERVICE_TYPE = 'service_type'
-    FIELD_AMT = 'amt'
+    FIELD_DESCRIPTION = 'description'
     FIELD_TIMESTAMP = 'timestamp'
 
-    ALL_FIELDS = [FIELD_UID, FIELD_SERVICE_TYPE, FIELD_AMT, FIELD_TIMESTAMP]
+    ALL_BASIC_FIELDS = [FIELD_SERVICE_TYPE, FIELD_DESCRIPTION, FIELD_TIMESTAMP]
