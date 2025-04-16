@@ -55,7 +55,7 @@ class Database:
     
     def get_user_doc_by_id(self, id):
         return self.get_user_collection().find_one({'_id': id})
-    
+        
     def get_sensor_collection(self):
         return self.db.get_collection('environment_sensor')
     
@@ -64,6 +64,12 @@ class Database:
     
     def get_services_status_collection(self):
         return self.db.get_collection('services_status')
+    
+    def get_services_doc_by_id(self, id, is_one):
+        if is_one:
+            return self.get_services_status_collection().find_one({'uid': id})
+        else:
+            return self.get_services_status_collection().find({'uid': id})
 
 # Device region
     def get_device_collection(self):

@@ -34,6 +34,7 @@ async def stop_system():
 async def control_service(request: ControlServiceRequest):
     try:
         success = await IOTSystem()._instance.control_service(
+            request.user_id,
             request.service_type,
             request.value
         )
@@ -60,7 +61,14 @@ async def control_service(request: ControlServiceRequest):
             status_code=500
         )
 
+@app.post("/start_camera")
+async def start_camera(request: UserIdRequest):
+    await IOTSystem()._instance.start_camera(request.user_id)
+@app.post("/stop_camera")
+async def stop_camera(request: UserIdRequest):
+    await IOTSystem()._instance.stop_camera(request.user_id)
+    
 if __name__ == '__main__':
     import uvicorn
     CustomLogger().get_logger().info("App: __main__")
-    uvicorn.run("iotsystem.main:app", host='127.0.0.1', port=9000,reload=True)
+    uvicorn.run("iotsystem.main:app", host='127.0.0.1', port=8000,reload=True)

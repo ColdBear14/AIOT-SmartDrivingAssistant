@@ -8,11 +8,18 @@ import asyncio
 import serial_asyncio
 from services.database import Database
 import serial.tools.list_ports
-
 from services.webcam import VideoCam
 
 WAIT_TIME = 5.0
 EAR_THRESHOLD = 0.25 
+
+FIELD_ACCESS = {
+    'air_cond_service': ('humid','temp'),
+    'dist_service': 'dis',
+    'headlight_service': 'lux',
+    'drowsiness_service': 'camera',
+    'drowsiness_threshold': 'wait_time',
+}
 
 class IOTSystem:
     _instance = None
@@ -46,8 +53,14 @@ class IOTSystem:
         else:
             # print("No serial device found.")
             CustomLogger().get_logger().info("No serial device found.")
-
         
+        self.states = {
+            'humid': True,
+            'temp': True,
+            'headlight': True,
+            'camera': True,
+            'dis': True
+        }
         self.videocam = VideoCam()
 
     async def connect_serial(self, port):
@@ -136,41 +149,31 @@ class IOTSystem:
         if len(splitData) < 2:
             return
         sensor_type, value = splitData[0], splitData[1]
-        CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
+        if self.states[sensor_type]:
+            CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
+            if self.states[sensor_type]:
+                sensor_map = {
+                    "temp": "temperature",
+                    "humid": "humidity",
+                    "lux": "bright",
+                    "dis": "distance"
+                }
 
-        sensor_map = {
-            "temp": "temperature",
-            "humid": "humidity",
-            "lux": "bright",
-            "dis": "distance"
-        }
+                try:
+                    doc: dict = {
+                        'uid': str(uid),
+                        'sensor_type': sensor_type.lower(), 
+                        'value': float(value)
+                    }
 
-        try:
-            doc: dict = {
-                'uid': str(uid),
-                'sensor_type': sensor_type.lower(), 
-                'value': float(value)
-            }
-
-            Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
-        except ValueError:
-            # print(f"Invalid data format: {sensor_type} -> {value}")
-            CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
+                    Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
+                except ValueError:
+                    # print(f"Invalid data format: {sensor_type} -> {value}")
+                    CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
 
     async def start_webcam(self,uid):
         # call to database for user preferences
-        try:
-            doc = await Database()._init_database.get_user_doc_by_id(uid)
-            if doc is None:
-                thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
-                
-            else:
-                thresholds = doc.get('camera', {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True})
-                
-        except Exception as e:
-            CustomLogger().get_logger().exception(f"Error getting user {uid} from database: {e}")
-            thresholds = {'ear_threshold': EAR_THRESHOLD, 'wait_time': WAIT_TIME, 'show_window': True}
-        
+        thresholds = {'show_window': True}
         if self.videocam:
             await self.videocam.start_webcam(thresholds)
             last_alarm_state = None
@@ -180,22 +183,59 @@ class IOTSystem:
                     _,play_alarm = self.videocam.last_frame
                     if play_alarm != last_alarm_state:
                         value = '1' if play_alarm else '0'
-                        Database()._instance._add_doc_with_timestamp('device_control',{'uid': str(uid), 'device_type': 'alarm','value': value})
+                        
+                        try:
+                            # TODO alarm to be update to yolobit
+                            self.writer.write(f"!alarm:{value}#".encode())
+                            
+                            await self.write_action_history(
+                                uid=uid,
+                                service_type='alarm',
+                                value=value
+                            )
+                        except Exception as e:
+                            CustomLogger().get_logger().exception(f"Failed to update alarm status: {e}")
+                            raise e
                         last_alarm_state = play_alarm                    
             
         else:
             CustomLogger().get_logger().warning("Webcam not initialized.")
+    async def _resolve_service(self, uid):
+        try:
+            services = Database()._instance.get_services_doc_by_id(uid,False)
+            if services is None:
+                CustomLogger().get_logger().info("No services found for this user.")
+                return None
             
+            for service in services:
+                convert_service = FIELD_ACCESS.get(service,None)
+                if convert_service is not None:
+                    raise ValueError(f"Invalid service type: {service}")
+                if isinstance(convert_service, tuple):
+                    for convert in convert_service:
+                        self.states[convert] = service['value']
+                        
+                elif convert_service in ['lux','dis','camera']:
+                    self.states[convert_service] = service['value']
+                else:
+                    self.videocam.set_time_threshold(service['value'])
+            
+        except Exception as e:
+            CustomLogger().get_logger().exception(f"Error resolving service: {e}")
+            return None
+        
     async def start_system(self, uid):
         if not self.running:
             self.running = True
-            asyncio.create_task(self.readSerial(uid))
-
-            asyncio.create_task(self.sendSerial(uid))
-            # CustomLogger().get_logger().info("Sensor System started.")
             
-            asyncio.create_task(self.start_webcam(uid))
-            CustomLogger().get_logger().info("Webcam System started.")
+            await self._resolve_service(uid)
+            
+            # asyncio.create_task(self.readSerial(uid))
+            # asyncio.create_task(self.sendSerial(uid))
+            # CustomLogger().get_logger().info("Sensor System started.")
+            if self.states['camera']:
+                asyncio.create_task(self.start_webcam(uid))
+                CustomLogger().get_logger().info("Webcam System started.")
         else:
             # print("System already running.")
             CustomLogger().get_logger().warning("System already running.")
@@ -205,44 +245,96 @@ class IOTSystem:
         self.videocam.stop()
         # print("IOT System stopped.")
         CustomLogger().get_logger().info("IOT System stopped.")
-
-    async def control_service(self, service_type: str, value: any = None):
-        """Controls a service state (on/off) and sends appropriate commands to Arduino"""
-        if not self.writer:
-            CustomLogger().get_logger().warning("No serial connection available")
-            return False
+    async def stop_camera(self,uid):
+        if self.videocam:
+            self.videocam.stop()
+            CustomLogger().get_logger().info("Webcam System stopped.")
+        else:
+            CustomLogger().get_logger().warning("Webcam not initialized.")
+    async def start_camera(self,uid):
+        asyncio.create_task(self.start_webcam(uid))
+        CustomLogger().get_logger().info("Webcam System started.")
+    async def control_service(self,uid:str, service_type: str, value: any = None):
+        """Controls a service state (on/off) and sends appropriate commands to YOLO"""
+        # if not self.writer:
+        #     CustomLogger().get_logger().warning("No serial connection available")
+        #     return False
         
 # TODO: Create command to control a specific service based on service_type and value
     # Example command: !air_cond:1#
-        command = f"!{service_type}:"
+        if service_type.startswith("air_cond"):
+            convert_type = ["humid","temp"], "fan"
+        elif service_type.startswith("headlight"):
+            convert_type = ["lux"],None
+        elif service_type.startswith("drowsiness"):
+            convert_type = ["camera"],None
+        elif service_type.startswith("dist"):
+            convert_type = ["dis"],None
+        else:
+            CustomLogger().get_logger().warning(f"Unknown service type: {service_type}")
+            return False
+
+        write_type = service_type
+        
         if isinstance(value, str):
             # Handle on/off states
-            command += "1" if value.lower() == "on" else "0"
+            for cvt in convert_type[0]:
+                self.states[cvt] = value.lower() == "on"
+            
         elif value is not None:
             # Handle numeric values for thresholds, temperature, etc.
-            command += str(value)
-        else:
-            command += "1"  # Default ON value
-        command += "#"
-    # End example!
-            
-        try:
-            self.writer.write(command.encode())
-
-            if isinstance(value, str):
-                # Handle on/off states
-                pass
-            
+            if service_type.startswith('drowsiness'):
+                print(self.videocam)
+                await self.videocam.set_time_threshold(value)
+                write_type = 'drowsiness_threshold'
+            elif convert_type[1] is not None:
+                command = f'{convert_type[1]}:{value}#'
+                write_type = 'air_cond_temp'
             else:
-                # Handle numeric values
-                pass
-
-            CustomLogger().get_logger().info(f"Service command sent: {command}")
-            return True
-
+                command = f'{convert_type[0][0]}:{value}#'
+                write_type = 'headlight_brightness'
+        else:
+            command = f'{convert_type[0][0]}:1#'
+            write_type = 'air_cond_temp' if convert_type[0][0] == 'temp' else 'headlight_brightness'
+        
+    # End example!
+        try :
+            if 'command' in locals():
+                self.writer.write(command.encode())
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to send service command: {e}")
             raise e
+
+        session = Database()._instance.client.start_session()
+        try:
+            with session.start_transaction():
+                try:
+                    await self.update_service_status(
+                        uid=uid,
+                        service=write_type,
+                        status=value if value is not None else 1
+                    )
+                except Exception as e:
+                    CustomLogger().get_logger().error(f"Failed to update service status: {e}")
+                    raise e
+                # write action history to database
+                try:
+                    await self.write_action_history(
+                        uid=uid,
+                        service_type=write_type,
+                        value=value if value is not None else 1
+                    )
+                except Exception as e:
+                    CustomLogger().get_logger().error(f"Failed to write action history: {e}")
+                    raise e
+                
+        except Exception as e:
+            session.abort_transaction()
+            CustomLogger().get_logger().error(f"Failed to update service status: {e}")
+            raise e
+
+        return True
+            
         
     async def write_action_history(self, uid: str = None, service_type: str = None, value: int = None):
         try:
@@ -259,16 +351,32 @@ class IOTSystem:
         
     async def update_service_status(self, uid: str = None, service: str = None, status: str = None):
         try:
-            Database()._instance.get_services_status_collection().update_one(
+            result = Database()._instance.get_services_status_collection().find_one(
                 {
                     "uid": uid
-                },
-                {
-                    "$set": {
-                        service: status
-                    }
                 }
             )
+
+            if not result:
+                # If no document found, create a new one
+                await Database()._instance._add_doc_with_timestamp(
+                    'services_status',
+                    {
+                        "uid": uid,
+                        service: status
+                    }
+                )
+            else:
+                Database()._instance.get_services_status_collection().update_one(
+                    {
+                        "uid": uid
+                    },
+                    {
+                        "$set": {
+                            service: status
+                        }
+                    }
+                )
 
         except Exception as e:
             CustomLogger().get_logger().error(f"Failed to update service status: {e}")
