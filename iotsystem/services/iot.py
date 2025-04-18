@@ -28,7 +28,7 @@ class IOTSystem:
         return cls._instance
 
     def _init_iot_system(self, config=None):
-        CustomLogger().get_logger().info("IOT System initialized.")
+        CustomLogger()._get_logger().info("IOT System initialized.")
         self.db = Database()._instance
         self.running = False
         self.reader = None
@@ -43,7 +43,7 @@ class IOTSystem:
                 asyncio.run(self._connect_serial(port))
         else:
             # print("No serial device found.")
-            CustomLogger().get_logger().info("No serial device found.")
+            CustomLogger()._get_logger().info("No serial device found.")
         
         self.states = {
             'humid': True,
@@ -59,10 +59,10 @@ class IOTSystem:
         """Async function to connect to serial device."""
         try:
             self.reader, self.writer = await serial_asyncio.open_serial_connection(url=port, baudrate=115200)
-            CustomLogger().get_logger().info(f"Connected to serial: {port}")
+            CustomLogger()._get_logger().info(f"Connected to serial: {port}")
 
         except Exception as e:
-            CustomLogger().get_logger().exception(f"Failed to connect to serial: {e}")
+            CustomLogger()._get_logger().exception(f"Failed to connect to serial: {e}")
 
     async def _send_serial(self, uid):
         """Sends data to the serial device."""
@@ -75,24 +75,24 @@ class IOTSystem:
                         if change['operationType'] == 'insert':
                             doc = change['fullDocument']
                             doc["_id"] = str(doc["_id"])
-                            CustomLogger().get_logger().info(f"Data retrieved: {doc}")
+                            CustomLogger()._get_logger().info(f"Data retrieved: {doc}")
 
                             feed = doc["device_type"]
                             payload = doc["value"]
 
                             message = f"!{feed}:{payload}#"
-                            CustomLogger().get_logger().info(f"Sending data: {message}")
+                            CustomLogger()._get_logger().info(f"Sending data: {message}")
 
                             if self.writer:
                                 self.writer.write(message.encode())
-                                CustomLogger().get_logger().info(f"Sent: {message}")
+                                CustomLogger()._get_logger().info(f"Sent: {message}")
 
             except asyncio.CancelledError:
-                CustomLogger().get_logger().info("sendSerial task was cancelled.")
+                CustomLogger()._get_logger().info("sendSerial task was cancelled.")
                 break
 
             except Exception as e:
-                CustomLogger().get_logger().exception(f"Error watching database changes: {e}")
+                CustomLogger()._get_logger().exception(f"Error watching database changes: {e}")
 
             
     @staticmethod
@@ -108,7 +108,7 @@ class IOTSystem:
     async def _read_serial(self, uid):
         """Reads and processes serial data asynchronously."""
         if not self.reader:
-            CustomLogger().get_logger().warning("No serial connection available.")
+            CustomLogger()._get_logger().warning("No serial connection available.")
             return
         
         while self.running:
@@ -116,17 +116,17 @@ class IOTSystem:
                 data = await self.reader.readuntil(b"#")
                 data = data.decode("UTF-8").replace("#", "").replace("!", "")
 
-                CustomLogger().get_logger().info(f"Received data: {data}")
+                CustomLogger()._get_logger().info(f"Received data: {data}")
                 await self._process_data(data, str(uid))
 
                 await asyncio.sleep(1)
             
             except Exception as e:
-                CustomLogger().get_logger().exception(f"Serial read error: {e}")    
+                CustomLogger()._get_logger().exception(f"Serial read error: {e}")    
 
     async def _process_data(self, data, uid):
         """Processes incoming serial data and stores it in DB."""
-        CustomLogger().get_logger().info(f"Processing data: {data}")
+        CustomLogger()._get_logger().info(f"Processing data: {data}")
         splitData = data.split(":")
 
         if len(splitData) < 2:
@@ -135,7 +135,7 @@ class IOTSystem:
         sensor_type, value = splitData[0], splitData[1]
 
         if self.states[sensor_type]:
-            CustomLogger().get_logger().info(f"Processed: {sensor_type} = {value}")
+            CustomLogger()._get_logger().info(f"Processed: {sensor_type} = {value}")
 
             if self.states[sensor_type]:
                 try:
@@ -148,7 +148,7 @@ class IOTSystem:
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
 
                 except ValueError:
-                    CustomLogger().get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
+                    CustomLogger()._get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
 
     async def _start_webcam(self,uid):
@@ -179,20 +179,20 @@ class IOTSystem:
                             )
 
                         except Exception as e:
-                            CustomLogger().get_logger().exception(f"Failed to update alarm status: {e}")
+                            CustomLogger()._get_logger().exception(f"Failed to update alarm status: {e}")
                             raise e
                         
                         last_alarm_state = play_alarm                    
             
         else:
-            CustomLogger().get_logger().warning("Webcam not initialized.")
+            CustomLogger()._get_logger().warning("Webcam not initialized.")
 
     async def _resolve_service(self, uid):
         try:
             services = Database()._instance.get_services_status_doc_by_id(uid, False)
 
             if services is None:
-                CustomLogger().get_logger().info("No services status document found for this user.")
+                CustomLogger()._get_logger().info("No services status document found for this user.")
                 return None
             
             for service in services:
@@ -212,7 +212,7 @@ class IOTSystem:
                     self.videocam.set_time_threshold(service['value'])
             
         except Exception as e:
-            CustomLogger().get_logger().exception(f"Error resolving service: {e}")
+            CustomLogger()._get_logger().exception(f"Error resolving service: {e}")
             return None
         
     async def _start_system(self, uid):
@@ -226,37 +226,37 @@ class IOTSystem:
 
                 # asyncio.create_task(self._read_serial(uid))
                 # asyncio.create_task(self._send_serial(uid))
-                CustomLogger().get_logger().info("Sensor System started.")
+                CustomLogger()._get_logger().info("Sensor System started.")
             
             if self.states['camera']:
                 # asyncio.create_task(self._start_webcam(uid))
-                CustomLogger().get_logger().info("Webcam System started.")
+                CustomLogger()._get_logger().info("Webcam System started.")
 
         else:
-            CustomLogger().get_logger().warning("System already running.")
+            CustomLogger()._get_logger().warning("System already running.")
 
     async def _stop_system(self):
         self.running = False
         # self.videocam.stop()
             
-        CustomLogger().get_logger().info("IOT System stopped.")
+        CustomLogger()._get_logger().info("IOT System stopped.")
 
     async def _stop_camera(self, uid):
         if self.videocam:
             self.videocam.stop()
-            CustomLogger().get_logger().info("Webcam System stopped.")
+            CustomLogger()._get_logger().info("Webcam System stopped.")
 
         else:
-            CustomLogger().get_logger().warning("Webcam not initialized.")
+            CustomLogger()._get_logger().warning("Webcam not initialized.")
 
     async def _start_camera(self, uid):
         asyncio.create_task(self._start_webcam(uid))
-        CustomLogger().get_logger().info("Webcam System started.")
+        CustomLogger()._get_logger().info("Webcam System started.")
 
     async def _control_service(self, uid: str, service_type: str, value: any):
         """Controls a service state and sends commands to Arduino"""
         if not self.writer:
-            CustomLogger().get_logger().warning("No serial connection available")
+            CustomLogger()._get_logger().warning("No serial connection available")
             # raise Exception("No serial connection available")
             
         if service_type.startswith("air_cond"):
@@ -268,7 +268,7 @@ class IOTSystem:
         elif service_type.startswith("dist"):
             convert_type = ["dis"], None
         else:
-            CustomLogger().get_logger().warning(f"Unknown service type: {service_type}")
+            CustomLogger()._get_logger().warning(f"Unknown service type: {service_type}")
             raise Exception(f"Unknown service type: {service_type}")
 
         write_type = service_type
@@ -300,10 +300,10 @@ class IOTSystem:
         try :
             if 'command' in locals():
                 # self.writer.write(command.encode())
-                CustomLogger().get_logger().info(f"Execute command \"{command}\"")
+                CustomLogger()._get_logger().info(f"Execute command \"{command}\"")
 
         except Exception as e:
-            CustomLogger().get_logger().error(f"Failed to execute command: {e}")
+            CustomLogger()._get_logger().error(f"Failed to execute command: {e}")
             raise Exception(f"Failed to execute command")
 
         session = Database()._instance.client.start_session()
@@ -323,16 +323,16 @@ class IOTSystem:
             #         session=session
             #     )
 
-            CustomLogger().get_logger().info(f"Updated service status document and action history")
+            CustomLogger()._get_logger().info(f"Updated service status document and action history")
 
         except Exception as e:
             session.abort_transaction()
-            CustomLogger().get_logger().error(f"Failed to update service status: {e}")
+            CustomLogger()._get_logger().error(f"Failed to update service status: {e}")
             raise Exception(f"Failed to update service status document")
         
 if __name__ == "__main__":
     import time
-    CustomLogger().get_logger().info("IOT System: __main__")
+    CustomLogger()._get_logger().info("IOT System: __main__")
     iotsystem = IOTSystem()._instance
     asyncio.run(iotsystem._start_system('123'))
     

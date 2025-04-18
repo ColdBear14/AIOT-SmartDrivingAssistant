@@ -14,6 +14,18 @@ router = APIRouter()
 def get_user_id(request: Request) -> str: 
     return request.state.user_id
 
+@router.get("/events")
+async def notification_stream(uid: str = Depends(get_user_id)):
+    """Stream notifications to the client via SSE."""
+    CustomLogger()._get_logger().info(f"Client \"{uid}\" connected to SSE stream")
+    try:
+        return await AppService()._get_notification_stream(uid)
+    except Exception as e:
+        return JSONResponse(
+            content={"message": "Internal server error ", "detail": str(e.args[0])},
+            status_code=500
+        )
+
 @router.get('/sensor_data')
 async def get_sensor_data(
     sensor_types: str,  # Receive as comma-separated string
@@ -73,41 +85,6 @@ async def get_services_status(uid = Depends(get_user_id)):
                 content={"message": "Internal server error ", "detail": e.args[0]},
                 status_code=500
             )
-
-# @router.patch("/config")
-# async def update_service_config(request: ServiceConfigRequest, uid = Depends(get_user_id)):
-#     """
-#     Endpoint to update services mode config.
-#     """
-#     if request is None:
-#         return JSONResponse(content={"message": "Invalid request"}, status_code=400)
-    
-#     try: 
-#         AppService()._update_service_config(uid, request)
-#         CustomLogger().get_logger().info(f"User config updated: {request}")
-
-#         return JSONResponse(
-#             content={"message": "User config updated successfully"},
-#             status_code=200,
-#             media_type="application/json"
-#         )
-    
-#     except Exception as e:
-#         if e.args[0] == "No data to update":
-#             return JSONResponse(
-#                 content={"message": e.args[0], "detail": "Request contain no data to update"},
-#                 status_code=422
-#             )
-#         elif e.args[0] == "No service config updated":
-#             return JSONResponse(
-#                 content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
-#                 status_code=404
-#             )
-#         else:
-#             return JSONResponse(
-#                 content={"message": "Internal server error ", "detail": e.args[0]},
-#                 status_code=500
-#             )
 
 @router.get("/action_history")
 async def get_action_history(request: ActionHistoryRequest, uid = Depends(get_user_id)):

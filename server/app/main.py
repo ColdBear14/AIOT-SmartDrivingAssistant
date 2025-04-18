@@ -3,6 +3,9 @@ import os
 # Add the root path to the sys.path to import the modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from utils.custom_logger import CustomLogger
 
 from fastapi import FastAPI
@@ -40,4 +43,4 @@ if __name__ == '__main__':
     CustomLogger()._get_logger().info("main: __main__")
 
     import uvicorn
-    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
+    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True, reload_dirs=["server/app"])

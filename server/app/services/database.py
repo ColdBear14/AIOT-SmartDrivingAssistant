@@ -1,5 +1,6 @@
 from utils.custom_logger import CustomLogger
 
+import os
 from pymongo import MongoClient
 from datetime import datetime
 import gridfs
@@ -25,10 +26,6 @@ class Database:
 
     def _init_database(self, config: dict=None, test_mode: bool=False):
         if config == None or not config.contains(self.FIELD_MONGO_URL) or not config.contains(self.FIELD_DB_NAME):
-            from dotenv import load_dotenv
-            import os
-
-            load_dotenv()
             config = {
                 self.FIELD_MONGO_URL: os.getenv("MONGODB_URL"),
                 self.FIELD_DB_NAME: os.getenv("MONGODB_DB_NAME")

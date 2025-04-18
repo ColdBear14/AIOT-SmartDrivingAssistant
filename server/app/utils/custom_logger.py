@@ -23,13 +23,9 @@ class CustomLogger:
                 handlers=[RichHandler(rich_tracebacks=True)]
             )
 
-            logging.getLogger("rich").setLevel(logging.WARNING)
-            logging.getLogger("concurrent").setLevel(logging.WARNING)
-            logging.getLogger("asyncio").setLevel(logging.WARNING)
-            logging.getLogger("fastapi").setLevel(logging.WARNING)
-            logging.getLogger("passlib").setLevel(logging.WARNING)
-            logging.getLogger("rich").setLevel(logging.WARNING)
-            logging.getLogger("pymongo").setLevel(logging.WARNING)
+            all_loggers = logging.Logger.manager.loggerDict.keys()
+            for logger in all_loggers:
+                logging.getLogger(logger).setLevel(logging.WARNING)
 
             self.log = logging.getLogger()
 

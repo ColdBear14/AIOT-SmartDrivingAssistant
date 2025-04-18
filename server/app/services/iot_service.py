@@ -2,6 +2,7 @@ import asyncio
 import uuid
 
 from models.request import IOTDataResponse, IOTNotification
+from services.app_service import AppService
 from utils.custom_logger import CustomLogger
 
 from typing import Dict
@@ -102,9 +103,15 @@ class IOTService:
                             await websocket.send_json({"error": "Device ID mismatch"})
                             continue
 
-                        self._handle_iot_system_notification(device_id, iot_notification.service_type, iot_notification.notification)
-
                         CustomLogger()._get_logger().info(f"Receive notification \"{iot_notification.notification}\" from device \"{device_id}\"")
+
+                        await AppService()._add_notification(
+                            client_id=device_id,
+                            notification={
+                                "service_type": iot_notification.service_type,
+                                "notification": iot_notification.notification
+                            }
+                        )
 
                     except Exception as e:
                         CustomLogger()._get_logger().error(f"Invalid notification from device \"{device_id}\": {e}")
@@ -199,6 +206,3 @@ class IOTService:
 
         if device_id in self.command_responses and command_id in self.command_responses[device_id]:
             del self.command_responses[device_id][command_id]
-
-    def _handle_iot_system_notification(self, device_id: str, service_type: str, notification: str):
-        pass

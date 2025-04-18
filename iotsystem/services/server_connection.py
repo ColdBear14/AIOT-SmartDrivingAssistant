@@ -1,7 +1,6 @@
 from helpers.custom_logger import CustomLogger
 
 import os
-from dotenv import load_dotenv
 import websockets
 import asyncio
 import json
@@ -29,18 +28,13 @@ class ServerConnection:
         return cls._instance
     
     def _init_instance(self, uid: str = None):
-        load_dotenv()
-
+        self.websocket = None
         self.uid = uid
 
         if uid == None:
             self.connection_url = None
-
         else:
             self.connection_url = f"{os.getenv("WEBSOCKETS_URL")}/{self.uid}"
-
-    def _delete_server_connection(self):
-        pass
 
     async def _connect_to_server(self):
         if self.uid == None:
@@ -52,7 +46,8 @@ class ServerConnection:
         for attempt in range(max_retries):
             try:
                 async with websockets.connect(self.connection_url) as websocket:
-                    CustomLogger().get_logger().info(f"Connected to server as {self.uid}")
+                    self.websocket = websocket
+                    CustomLogger()._get_logger().info(f"Connected to server as {self.uid}")
 
                     # Run send and receive tasks concurrently
                     await asyncio.gather(
@@ -61,27 +56,31 @@ class ServerConnection:
                     )
 
             except (websockets.exceptions.WebSocketException, ConnectionError) as e:
-                CustomLogger().get_logger().error(f"Connection failed (attempt {attempt + 1}/{max_retries}): {e}")
+                CustomLogger()._get_logger().error(f"Connection failed (attempt {attempt + 1}/{max_retries}): {e}")
 
                 if attempt < max_retries - 1:
                     await asyncio.sleep(retry_delay)
 
                 else:
-                    CustomLogger().get_logger().error("Max retries reached. Giving up.")
+                    CustomLogger()._get_logger().error("Max retries reached. Giving up.")
                     break
 
             except Exception as e:
-                CustomLogger().get_logger().error(f"Unexpected error: {e}")
+                CustomLogger()._get_logger().error(f"Unexpected error: {e}")
                 break
 
     async def _handle_server_commands(self, websocket):
         try:
             async for message in websocket:
                 data = json.loads(message)
-                CustomLogger().get_logger().info(f"Received command: {data}")
+                if "error" in data:
+                    CustomLogger()._get_logger().error(f"Error from server: {data['error']}")
+                    continue
+
+                CustomLogger()._get_logger().info(f"Received command: {data}")
 
                 if not self.FIELD_COMMAND in data or not self.FIELD_COMMAND_ID in data:
-                    CustomLogger().get_logger().error(f"Invalid message: {data}")
+                    CustomLogger()._get_logger().error(f"Invalid message: {data}")
                     websocket.send(json.dumps(
                         {
                             self.FIELD_DEVICE_ID: "none",
@@ -96,7 +95,7 @@ class ServerConnection:
                 command_id = data[self.FIELD_COMMAND_ID]
 
                 if not self.FIELD_TARGET in command or not self.FIELD_VALUE in command:
-                    CustomLogger().get_logger().error(f"Invalid command: {data}")
+                    CustomLogger()._get_logger().error(f"Invalid command: {data}")
                     websocket.send(json.dumps(
                         {
                             self.FIELD_DEVICE_ID: self.uid,
@@ -111,7 +110,7 @@ class ServerConnection:
                     if command[self.FIELD_VALUE] == "on":
                         try:
                             await IOTSystem()._start_system(self.uid)
-                            CustomLogger().get_logger().info(f"Started system {self.uid}")
+                            CustomLogger()._get_logger().info(f"Started system {self.uid}")
 
                             await websocket.send(json.dumps(
                                 {
@@ -122,7 +121,7 @@ class ServerConnection:
                             ))
                         
                         except Exception as e:
-                            CustomLogger().get_logger().error(f"Failed to start system: {e.args[0]}")
+                            CustomLogger()._get_logger().error(f"Failed to start system: {e.args[0]}")
                             
                             await websocket.send(json.dumps(
                                 {
@@ -137,7 +136,7 @@ class ServerConnection:
                     elif command[self.FIELD_VALUE] == "off":
                         try:
                             await IOTSystem()._stop_system()
-                            CustomLogger().get_logger().info(f"Stopped system {self.uid}")
+                            CustomLogger()._get_logger().info(f"Stopped system {self.uid}")
 
                             await websocket.send(json.dumps(
                                 {
@@ -148,7 +147,7 @@ class ServerConnection:
                             ))
 
                         except Exception as e:
-                            CustomLogger().get_logger().error(f"Failed to stop system: {e.args[0]}")
+                            CustomLogger()._get_logger().error(f"Failed to stop system: {e.args[0]}")
                             await websocket.send(json.dumps(
                                 {
                                     self.FIELD_DEVICE_ID: self.uid,
@@ -163,7 +162,7 @@ class ServerConnection:
                     try:
                         await IOTSystem()._control_service(self.uid, command[self.FIELD_TARGET], command[self.FIELD_VALUE])
  
-                        CustomLogger().get_logger().info(f"Controlled service {command['target']} with value {command['value']}")
+                        CustomLogger()._get_logger().info(f"Controlled service {command['target']} with value {command['value']}")
 
                         await websocket.send(json.dumps(
                             {
@@ -174,7 +173,7 @@ class ServerConnection:
                         ))
 
                     except Exception as e:
-                        CustomLogger().get_logger().error(f"Failed to control service: {e.args[0]}")
+                        CustomLogger()._get_logger().error(f"Failed to control service: {e.args[0]}")
 
                         await websocket.send(json.dumps(
                             {
@@ -187,15 +186,21 @@ class ServerConnection:
                         continue
 
         except websockets.exceptions.ConnectionClosed:
-            CustomLogger().get_logger().warning("Disconnected")
+            CustomLogger()._get_logger().warning("Disconnected")
  
         except Exception as e:
-            CustomLogger().get_logger().error(f"Error receiving commands: {e}")
+            CustomLogger()._get_logger().error(f"Error receiving commands: {e}")
 
     async def _track_device_status(self, websocket):
-        pass
+        option = input("Send mock notifications? (y/n): ")
+        if option == "y" or option == "Y":
+            await self._send_notification_to_server(websocket, "air_cond_service", "Mock notification")
 
     async def _send_notification_to_server(self, websocket, service_type: str, notification: str):
+        if not websocket:
+            CustomLogger()._get_logger().warning("Cannot send notification: WebSocket connection not established")
+            return
+        
         try:
             await websocket.send(json.dumps(
                 {
@@ -204,10 +209,18 @@ class ServerConnection:
                     self.FIELD_NOTIFICATION: notification
                 }
             ))
-            CustomLogger().get_logger().info(f"Sent notification to server: {notification}")
+            CustomLogger()._get_logger().info(f"Sent notification to server: {notification}")
 
         except websockets.exceptions.ConnectionClosed:
-            CustomLogger().get_logger().warning("Cannot send notification: WebSocket connection closed")
+            CustomLogger()._get_logger().warning("Cannot send notification: WebSocket connection closed")
 
         except Exception as e:
-            CustomLogger().get_logger().error(f"Failed to send notification: {e}")
+            CustomLogger()._get_logger().error(f"Failed to send notification: {e}")
+
+    def _disconnect_server_connection(self):
+        try:
+            self.websocket.close()
+            CustomLogger()._get_logger().info(f"Disconnected from server: {self.uid}")
+
+        except Exception as e:
+            CustomLogger()._get_logger().error(f"Failed to disconnect from server: {e}")

@@ -1,5 +1,6 @@
 from helpers.custom_logger import CustomLogger
 
+import os
 from pymongo import MongoClient
 from datetime import datetime
 
@@ -22,24 +23,20 @@ class Database:
 
     def _init_database(self, config, test_mode=False):
         if config == None or not config.contains("mongo_url") or not config.contains("db_name"):
-            from dotenv import load_dotenv
-            import os
-
-            load_dotenv()
             config = {
                 "mongo_url": os.getenv("MONGODB_URL"),
                 "db_name": os.getenv("MONGODB_DB_NAME")
             }
-            CustomLogger().get_logger().info("Database's config: " + str(config))
+            CustomLogger()._get_logger().info("Database's config: " + str(config))
 
         self.client = MongoClient(config["mongo_url"])
-        CustomLogger().get_logger().info(f"Database: Connected with client {self.client}.")
+        
         if test_mode:
-            CustomLogger().get_logger().info("Database: Test mode.")
+            CustomLogger()._get_logger().info("Database: Test mode.")
             self.db = self.client['test']
         else:
             self.db = self.client[config["db_name"]]
-            CustomLogger().get_logger().info(f"Database: Connected with database {self.db}.")
+            CustomLogger()._get_logger().info(f"Database: Connected with database {self.db}.")
         self.collections = set()
 
     def _add_doc_with_timestamp(self, collection_name=None, document=None, session=None):
@@ -51,7 +48,7 @@ class Database:
 
         result = self.db[collection_name].insert_one(document)
 
-        CustomLogger().get_logger().info(f'Added document with ID: {result.inserted_id}')
+        CustomLogger()._get_logger().info(f'Added document with ID: {result.inserted_id}')
         return result.inserted_id
     
     def get_services_status_collection(self):
@@ -102,7 +99,7 @@ class Database:
 
 if __name__ == '__main__':
     def test():
-        CustomLogger().get_logger().info("Database: Test mode.")
+        CustomLogger()._get_logger().info("Database: Test mode.")
 
         document = {
             'key': 'value'
