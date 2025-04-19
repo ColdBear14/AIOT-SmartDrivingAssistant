@@ -145,11 +145,65 @@ class IOTSystem:
                         'value': float(value)
                     }
 
+                    self._process_threshold(sensor_type, value, uid)
+
+
+
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
 
                 except ValueError:
                     CustomLogger()._get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
+
+    async def _process_threshold(self, sensor_type ,value, uid):
+                if (sensor_type == 'temp' and float(value) > 50) :
+                        self.writer.write(f"!alarm:1#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='alarm',
+                                value='1'
+                        )
+                        self.writer.write(f"!fan:60#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='fan',
+                                value='60'
+                        )
+
+                elif (sensor_type == 'humid' and float(value) > 70) :
+                        self.writer.write(f"!alarm:1#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='alarm',
+                                value='1'
+                        )
+                        self.writer.write(f"!fan:60#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='fan',
+                                value='60'
+                        )
+                elif (sensor_type == 'dis' and float(value) < 5) :
+                        self.writer.write(f"!alarm:1#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='alarm',
+                                value='1'
+                            )
+                        
+                elif (sensor_type == 'lux' and float(value) < 50) :
+                        self.writer.write(f"!alarm:1#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='alarm',
+                                value='1'
+                            )
+                        self.writer.write(f"!headlight:2#".encode())
+                        await self.write_action_history(
+                                uid=uid,
+                                service_type='headlight',
+                                value='2'
+                        )
 
     async def _start_webcam(self,uid):
         # call to database for user preferences
@@ -286,15 +340,15 @@ class IOTSystem:
                 write_type = 'drowsiness_threshold'
 
             elif convert_type[1] is not None:
-                command = f'{convert_type[1]}:{value}#'
+                command = f'!{convert_type[1]}:{value}#'
                 write_type = 'air_cond_temp'
 
             else:
-                command = f'{convert_type[0][0]}:{value}#'
+                command = f'!{convert_type[0][0]}:{value}#'
                 write_type = 'headlight_brightness'
 
         else:
-            command = f'{convert_type[0][0]}:1#'
+            command = f'!{convert_type[0][0]}:1#'
             write_type = 'air_cond_temp' if convert_type[0][0] == 'temp' else 'headlight_brightness'
         
         try :

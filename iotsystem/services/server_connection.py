@@ -34,7 +34,7 @@ class ServerConnection:
         if uid == None:
             self.connection_url = None
         else:
-            self.connection_url = f"{os.getenv("WEBSOCKETS_URL")}/{self.uid}"
+            self.connection_url = f"{os.getenv('WEBSOCKETS_URL')}/{self.uid}"
 
     async def _connect_to_server(self):
         if self.uid == None:
