@@ -67,16 +67,16 @@ class AuthService:
                     session=session
                 )
                 
-                init_service_config_data = AppService()._create_init_services_status_data(str(user_result.inserted_id))
+                init_services_status_data = AppService()._create_init_services_status_data(str(user_result.inserted_id))
 
-                service_config_result = Database()._instance.get_services_status_collection().insert_one(
-                    init_service_config_data,
+                services_status_result = Database()._instance.get_services_status_collection().insert_one(
+                    init_services_status_data,
                     session=session
                 )
             
             return {
                 "user_doc_id": str(user_result.inserted_id),
-                "service_config_doc_id": str(service_config_result.inserted_id)
+                "service_config_doc_id": str(services_status_result.inserted_id)
             }
 
         except PyMongoError as e:

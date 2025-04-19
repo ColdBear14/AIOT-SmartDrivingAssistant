@@ -29,6 +29,7 @@ async def register(user: UserRequest):
             )
 
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to register user: {e.args[0]}")
         if e.__class__ == PyMongoError:
             # raise HTTPException(status_code=500, detail="Can not operate database transaction")
             return JSONResponse(
@@ -67,6 +68,7 @@ async def login(user: UserRequest, response: Response):
             )
 
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to login user: {e.args[0]}")
         if e.args[0] == "Invalid credentials":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Invalid username or password"},
@@ -106,6 +108,7 @@ async def logout(request: Request, response: Response):
             )
     
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to logout user: {e.args[0]}")
         return JSONResponse(
             content={"message": "Internal server error ", "detail": e.args[0]},
             status_code=500

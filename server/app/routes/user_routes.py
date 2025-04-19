@@ -27,6 +27,7 @@ async def get_user_info(uid = Depends(get_user_id)):
             
         
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to get user info: {e.args[0]}")
         if e.args[0] == "User not find":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
@@ -56,6 +57,7 @@ async def update_user_info(user_info_request: UserInfoRequest, uid = Depends(get
         )
     
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to update user info: {e.args[0]}")
         if e.args[0] == "No data to update":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Request contain no data to update"},
@@ -86,6 +88,7 @@ async def delete_user_info(uid = Depends(get_user_id)):
         return response
     
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to delete user info: {e.args[0]}")
         return JSONResponse(
             content={"message": "Internal server error ", "detail": e.args[0]},
             status_code=500
@@ -100,6 +103,7 @@ async def get_user_avatar(uid = Depends(get_user_id)):
         return StreamingResponse(file, media_type=file.content_type)
 
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to get user avatar: {e.args[0]}")
         if e.args[0] == "User not find":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
@@ -129,6 +133,7 @@ async def update_user_avatar(file: UploadFile = File(...), uid = Depends(get_use
         )
 
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to update user avatar: {e.args[0]}")
         if e.args[0] == "User not find":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
@@ -151,6 +156,7 @@ async def delete_user_avatar(uid = Depends(get_user_id)):
         )
 
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to delete user avatar: {e.args[0]}")
         if e.args[0] == "User not find":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},

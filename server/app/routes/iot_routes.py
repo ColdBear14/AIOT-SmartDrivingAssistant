@@ -95,6 +95,7 @@ async def control_service(request: ControlServiceRequest, uid = Depends(get_user
         )
             
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to control service: {e.args[0]}")
         return JSONResponse(
             content={"message": "Failed to control service", "detail": str(e.args[0])},
             status_code=500
