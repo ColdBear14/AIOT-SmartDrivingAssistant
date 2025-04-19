@@ -17,4 +17,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--uid', type=str, required=True, help='User ID')
     args = parser.parse_args()
+    
     asyncio.run(ServerConnection(uid=args.uid)._instance._connect_to_server())

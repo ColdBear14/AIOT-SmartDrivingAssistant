@@ -1,5 +1,6 @@
 import sys
 import os
+
 # Add the root path to the sys.path to import the modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
@@ -12,12 +13,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from middlewares.auth_middleware import AuthMiddleware
+from services.database import Database
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:9000"],  # First one is app client, second one is iot-server
+    allow_origins=os.getenv("ALLOWED_ORIGINS").split(','),  # First one is app client, second one is iot-server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -42,5 +44,6 @@ app.include_router(app_router, prefix='/app')
 if __name__ == '__main__':
     CustomLogger()._get_logger().info("main: __main__")
 
+    Database()._instance._init_database()
     import uvicorn
-    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True, reload_dirs=["server/app"])
+    uvicorn.run('main:app', host='127.0.0.1', port=8080, reload=True, reload_dirs=["server/app"])

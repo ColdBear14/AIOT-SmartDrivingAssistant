@@ -176,17 +176,19 @@ class AuthService:
             The Response object with the added cookie.
         '''
         secure_mode: bool
-        if os.getenv("WEB_CONNECTION") == "False":
+        if os.getenv("SECURE") == "False":
             secure_mode = False
         else:
             secure_mode = True
+
+        samesite_mode: str = os.getenv("SAME_SITE")
 
         response.set_cookie(
             key="session_id",
             value=session_id,
             httponly=True,
             secure=secure_mode, # False to test api with postman
-            samesite="None",
+            samesite=samesite_mode,
             path="/",
             max_age=3600
         )
@@ -203,16 +205,18 @@ class AuthService:
             The Response object with the delete cookie option.
         '''
         secure_mode: bool
-        if os.getenv("WEB_CONNECTION") == "False":
+        if os.getenv("SECURE") == "False":
             secure_mode = False
         else:
             secure_mode = True
+
+        samesite_mode: str = os.getenv("SAME_SITE")
 
         response.delete_cookie(
             key="session_id",
             httponly=True,
             secure=secure_mode, # False to test api with postman
-            samesite="None",
+            samesite=samesite_mode,
             path="/"
         )
         return response
