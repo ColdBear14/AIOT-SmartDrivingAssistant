@@ -44,6 +44,6 @@ app.include_router(app_router, prefix='/app')
 if __name__ == '__main__':
     CustomLogger()._get_logger().info("main: __main__")
 
-    Database()._instance._init_database()
+    db = Database()._instance
     import uvicorn
     uvicorn.run('main:app', host='127.0.0.1', port=8080, reload=True, reload_dirs=["server/app"])

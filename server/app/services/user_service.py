@@ -76,14 +76,14 @@ class UserService:
         if result.modified_count == 0:
             raise Exception("No user info updated")
 
-    def _get_user_info_by_session_id(self, session_id: str = None):
+    def _get_user_info_by_session_token(self, session_token: str = None):
         '''
             Get user info from the database by current user's session, included '_id' field.
         '''
-        if not session_id:
+        if not session_token:
             return None
         
-        user = Database()._instance.get_user_collection().find_one({'session_id': session_id})
+        user = Database()._instance.get_user_collection().find_one({'session_token': session_token})
         return user
 
     def _delete_user_account(self, uid: str = None):

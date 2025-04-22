@@ -1,7 +1,6 @@
 class UserDocument():
     FIELD_USERNAME = 'username'
     FIELD_PASSWORD = 'password'
-    FIELD_SESSION = 'session_id'
 
     FIELD_NAME = 'name'
     FIELD_EMAIL = 'email'
