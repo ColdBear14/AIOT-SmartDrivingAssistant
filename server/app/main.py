@@ -42,7 +42,7 @@ app.include_router(app_router, prefix='/app')
 #     CustomLogger().get_logger().info(route)
 
 if __name__ == '__main__':
-    CustomLogger()._get_logger().info("main: __main__")
+    CustomLogger()._get_logger().info("Starting backend server")
 
     db = Database()._instance
     import uvicorn

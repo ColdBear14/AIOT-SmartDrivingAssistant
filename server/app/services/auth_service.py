@@ -1,7 +1,6 @@
 import os
 from typing import Optional, Tuple
 
-from bson import ObjectId
 from fastapi import Response
 from passlib.context import CryptContext
 import secrets
@@ -30,20 +29,20 @@ class AuthService:
         return cls._instance
 
     def __init_instance(self):
-        self.__redis = redis.RedisCluster(
-            startup_nodes=[
-                {"host": "localhost", "port": 8443},
-                {"host": "localhost", "port": 9443},
-                {"host": "localhost", "port": 12000}
-            ]
-        )
-        
         if os.getenv("SECURE") == "False":
             self.SECURE_MODE = False
         else:
             self.SECURE_MODE = True
 
         self.SAMESITE_MODE = os.getenv("SAME_SITE")
+
+        self.__redis = redis.Redis(
+            host=os.getenv("REDIS_HOST"),
+            port=os.getenv("REDIS_PORT"),
+            decode_responses=True,
+            username="default",
+            password=os.getenv("REDIS_PASSWORD"),
+        )
         
     def _hash_pw(self, password: str) -> str:
         if not password:
@@ -103,7 +102,7 @@ class AuthService:
             session.abort_transaction()
             raise e
     
-    def _authenticate(self, user_request: UserRequest) -> Tuple[Optional[str], Tuple[Optional[str], Optional[str]]]:
+    def _authenticate(self, user_request: UserRequest) -> Tuple[Optional[str], Optional[str]]:
         '''
         Authenticate a user using the provided UserRequest object.
 
@@ -122,17 +121,20 @@ class AuthService:
             raise Exception("Invalid credentials")
         
         session_token, refresh_token = self._create_session(str(user['_id']))
-        return str(user['_id']), (session_token, refresh_token)
+        return (session_token, refresh_token)
     
     def _create_session(self, uid: str) -> Tuple[Optional[str], Optional[str]]:
         session_token = secrets.token_hex(16)
         refresh_token = secrets.token_hex(32)
 
-        self.__redis.setex(f"session:{session_token}", self.FIELD_SESSION_TTL, uid)
-        self.__redis.setex(f"refresh:{refresh_token}", self.FIELD_REFRESH_TTL, uid)
+        try:
+            self.__redis.setex(f"session:{session_token}", self.FIELD_SESSION_TTL, uid)
+            self.__redis.setex(f"refresh:{refresh_token}", self.FIELD_REFRESH_TTL, uid)
 
-        return session_token, refresh_token
-    
+            return session_token, refresh_token
+        except Exception as e:
+            raise e
+
     def _validate_session(self, session_token: str) -> Optional[str]:
         user_id = self.__redis.get(f"session:{session_token}")
         if user_id:

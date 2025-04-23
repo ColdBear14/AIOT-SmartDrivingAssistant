@@ -22,3 +22,4 @@ build
 frontend/.env
 iotsystem/.env
 server/.env
+server/logs

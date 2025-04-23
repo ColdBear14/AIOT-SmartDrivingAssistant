@@ -10,4 +10,5 @@ datetime
 rich
 httpx
 python-multipart
-paho-mqtt
+redis
+websockets

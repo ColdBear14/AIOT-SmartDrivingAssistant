@@ -17,7 +17,7 @@ async def get_user_info(uid = Depends(get_user_id)):
     try:
         user_data = UserService()._get_user_info(uid)
 
-        CustomLogger()._get_logger().info(f"User info: {user_data}")
+        CustomLogger()._get_logger().info(f"Retrieve successfully user info: {user_data}")
 
         return JSONResponse(
             content=user_data,
@@ -48,7 +48,7 @@ async def get_user_info(uid = Depends(get_user_id)):
 async def update_user_info(user_info_request: UserInfoRequest, uid = Depends(get_user_id)):
     try:
         UserService()._update_user_info(uid, user_info_request)
-        CustomLogger()._get_logger().info(f"User info updated: {user_info_request}")
+        CustomLogger()._get_logger().info(f"Update successfully user info with request: {user_info_request}")
 
         return JSONResponse(
             content={"message": "User info updated successfully"},
@@ -78,7 +78,7 @@ async def update_user_info(user_info_request: UserInfoRequest, uid = Depends(get
 async def delete_user_info(uid = Depends(get_user_id)):
     try:
         UserService()._delete_user_account(uid)
-        CustomLogger()._get_logger().info(f"User info deleted: {uid}")
+        CustomLogger()._get_logger().info(f"Delete successfully user info with uid: \"{uid}\"")
         
         response = JSONResponse(
             content={},
@@ -98,8 +98,7 @@ async def delete_user_info(uid = Depends(get_user_id)):
 async def get_user_avatar(uid = Depends(get_user_id)):
     try:
         file = UserService()._get_avatar(uid)
-        CustomLogger()._get_logger().info(f"User avatar: {file.filename} - {file.chunk_size} bytes - {file.content_type}")
-
+        CustomLogger()._get_logger().info(f"Retrieve successfully user avatar: {file}")
         return StreamingResponse(file, media_type=file.content_type)
 
     except Exception as e:
@@ -123,8 +122,7 @@ async def get_user_avatar(uid = Depends(get_user_id)):
 async def update_user_avatar(file: UploadFile = File(...), uid = Depends(get_user_id)):
     try:
         result = await UserService()._update_avatar(uid, file)
-
-        CustomLogger()._get_logger().info(f"User avatar updated: {result.file_id} - {result.file_name} - {result.file_size} bytes - {result.file_type}")
+        CustomLogger()._get_logger().info(f"Update successfully user avatar: {result}")
         
         return JSONResponse(
             content={"message": "User avatar updated successfully"},
@@ -148,6 +146,7 @@ async def update_user_avatar(file: UploadFile = File(...), uid = Depends(get_use
 async def delete_user_avatar(uid = Depends(get_user_id)):
     try:
         UserService()._delete_avatar(uid)
+        CustomLogger()._get_logger().info(f"Delete successfully user avatar: {uid}")
 
         return JSONResponse(
             content={"message": "User avatar deleted successfully"},

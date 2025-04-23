@@ -1,6 +1,3 @@
-import os
-# import sys
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from utils.custom_logger import CustomLogger
 
 from fastapi import APIRouter, Request, Depends
@@ -21,6 +18,7 @@ async def notification_stream(uid: str = Depends(get_user_id)):
     try:
         return await AppService()._get_notification_stream(uid)
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to get notification stream: {e.args[0]}")
         return JSONResponse(
             content={"message": "Internal server error ", "detail": str(e.args[0])},
             status_code=500
@@ -32,6 +30,7 @@ async def get_sensor_data(
     uid: str = Depends(get_user_id)
 ):
     if not sensor_types:
+        CustomLogger()._get_logger().info("No sensor types provided")
         return JSONResponse(content=[], status_code=200)
     
     try:
@@ -53,8 +52,9 @@ async def get_sensor_data(
             status_code=200
         )
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to get sensor data: {e.args[0]}")
         return JSONResponse(
-            content={"message": "Internal server error ", "detail": str(e)},
+            content={"message": "Internal server error ", "detail": str(e.args[0])},
             status_code=500
         )
 
@@ -65,8 +65,7 @@ async def get_services_status(uid = Depends(get_user_id)):
     """
     try:
         service_config_data = AppService()._get_services_status(uid)
-
-        CustomLogger()._get_logger().info(f"User config: {service_config_data}")
+        CustomLogger()._get_logger().info(f"Retrieve successfully services status: {service_config_data}")
 
         return JSONResponse(
             content=service_config_data,
@@ -75,6 +74,7 @@ async def get_services_status(uid = Depends(get_user_id)):
         )
         
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to get services status: {e.args[0]}")
         if e.args[0] == "Service config not find":
             return JSONResponse(
                 content={"message": e.args[0], "detail": "Can not find any document with the uid that extracted from cookie's session"},
@@ -90,8 +90,7 @@ async def get_services_status(uid = Depends(get_user_id)):
 async def get_action_history(request: ActionHistoryRequest, uid = Depends(get_user_id)):
     try:
         data = AppService()._get_action_history(uid, request)
-
-        CustomLogger()._get_logger().info(f"Retrieved action history for {request.service_type} of user {uid}")
+        CustomLogger()._get_logger().info(f"Retrieved successfully action history for \"{request.service_type}\" of user \"{uid}\"")
 
         return JSONResponse(
             content=data,
@@ -99,6 +98,7 @@ async def get_action_history(request: ActionHistoryRequest, uid = Depends(get_us
         )
     
     except Exception as e:
+        CustomLogger()._get_logger().error(f"Failed to get action history: {e.args[0]}")
         return JSONResponse(
             content={"message": "Internal server error ", "detail": e.args[0]},
             status_code=500

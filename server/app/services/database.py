@@ -30,28 +30,17 @@ class Database:
                 self.FIELD_MONGO_URL: os.getenv("MONGODB_URL"),
                 self.FIELD_DB_NAME: os.getenv("MONGODB_DB_NAME")
             }
-            CustomLogger()._get_logger().info("Database's config: " + str(config))
-
-        self.client = MongoClient(config[self.FIELD_MONGO_URL])
-        if test_mode:
-            CustomLogger()._get_logger().info("Database: Test mode.")
-            self.db = self.client['test']
-        else:
+            CustomLogger()._get_logger().info("Use env configuration to initialize database")
+        try:
+            self.client = MongoClient(config[self.FIELD_MONGO_URL])
             self.db = self.client[config[self.FIELD_DB_NAME]]
             self.fs = gridfs.GridFS(self.db, os.getenv("MONGOBD_AVATAR_COL"))
 
-    def _add_doc_with_timestamp(self, collection_name: str=None, document: dict=None):
-        '''Add new document to collection with timestamp'''
-        if collection_name is None or document is None:
-            return None
-        
-        document['timestamp'] = datetime.now()
+            CustomLogger()._get_logger().info(f"Connected with database {self.db}.")
+        except Exception as e:
+            CustomLogger()._get_logger().error(f"Failed to connect with database: {e}")
+            self._instance = None
 
-        result = self.db[collection_name].insert_one(document)
-
-        CustomLogger()._get_logger().info(f'Added document with ID: {result.inserted_id}')
-        return result.inserted_id
-    
 # User region
     def get_user_collection(self):
         return self.db.get_collection(self.FIELD_USER_COLLECTION)
@@ -70,14 +59,3 @@ class Database:
     def get_action_history_collection(self):
         return self.db.get_collection(self.FIELD_ACTION_HISTORY_COLLECTION)
 # End IOT region
-
-if __name__ == '__main__':
-    def test():
-        CustomLogger()._get_logger().info("Database: Test mode.")
-
-        document = {
-            'key': 'value'
-        }
-        result = Database(None, True)._instance._add_doc_with_timestamp('test_collection', document)
-
-    test()
