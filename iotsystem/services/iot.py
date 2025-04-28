@@ -6,6 +6,7 @@ import serial.tools.list_ports
 
 from services.database import Database
 from services.webcam import VideoCam
+from services.device import Device
 
 WAIT_TIME = 5.0
 EAR_THRESHOLD = 0.25 
@@ -33,6 +34,8 @@ class IOTSystem:
         self.running = False
         self.reader = None
         self.writer = None
+        self.device = None
+
 
         port = self._get_port()
         if port != "None":
@@ -61,38 +64,40 @@ class IOTSystem:
             self.reader, self.writer = await serial_asyncio.open_serial_connection(url=port, baudrate=115200)
             CustomLogger()._get_logger().info(f"Connected to serial: {port}")
 
+            self.device = Device(self.writer)
+
         except Exception as e:
             CustomLogger()._get_logger().exception(f"Failed to connect to serial: {e}")
 
-    async def _send_serial(self, uid):
-        """Sends data to the serial device."""
-        while self.running:
-            try:
-                # Set up the change stream to watch for updates
-                with Database()._instance.get_device_collection().watch() as stream:
-                    for change in stream:
-                        # Check if the change is relevant to the given UID
-                        if change['operationType'] == 'insert':
-                            doc = change['fullDocument']
-                            doc["_id"] = str(doc["_id"])
-                            CustomLogger()._get_logger().info(f"Data retrieved: {doc}")
+    # async def _send_serial(self, uid):
+    #     """Sends data to the serial device."""
+    #     while self.running:
+    #         try:
+    #             # Set up the change stream to watch for updates
+    #             with Database()._instance.get_device_collection().watch() as stream:
+    #                 for change in stream:
+    #                     # Check if the change is relevant to the given UID
+    #                     if change['operationType'] == 'insert':
+    #                         doc = change['fullDocument']
+    #                         doc["_id"] = str(doc["_id"])
+    #                         CustomLogger()._get_logger().info(f"Data retrieved: {doc}")
 
-                            feed = doc["device_type"]
-                            payload = doc["value"]
+    #                         feed = doc["device_type"]
+    #                         payload = doc["value"]
 
-                            message = f"!{feed}:{payload}#"
-                            CustomLogger()._get_logger().info(f"Sending data: {message}")
+    #                         message = f"!{feed}:{payload}#"
+    #                         CustomLogger()._get_logger().info(f"Sending data: {message}")
 
-                            if self.writer:
-                                self.writer.write(message.encode())
-                                CustomLogger()._get_logger().info(f"Sent: {message}")
+    #                         if self.writer:
+    #                             self.writer.write(message.encode())
+    #                             CustomLogger()._get_logger().info(f"Sent: {message}")
 
-            except asyncio.CancelledError:
-                CustomLogger()._get_logger().info("sendSerial task was cancelled.")
-                break
+    #         except asyncio.CancelledError:
+    #             CustomLogger()._get_logger().info("sendSerial task was cancelled.")
+    #             break
 
-            except Exception as e:
-                CustomLogger()._get_logger().exception(f"Error watching database changes: {e}")
+    #         except Exception as e:
+    #             CustomLogger()._get_logger().exception(f"Error watching database changes: {e}")
 
             
     @staticmethod
@@ -145,11 +150,30 @@ class IOTSystem:
                         'value': float(value)
                     }
 
+                    await self.preprocess_data(sensor_type, value, uid)
+
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
 
                 except ValueError:
                     CustomLogger()._get_logger().exception(f"Invalid data format: {sensor_type} -> {value}")
                     Database()._instance._add_doc_with_timestamp('environment_sensor', doc)
+
+    async def preprocess_data(self, sensor_type, value, uid):
+        if(sensor_type == 'temp'):
+            if float(value) > 50.0:
+                await Device().alarm_service(uid)
+                await Device().fan_services(uid)
+        elif (sensor_type == 'humid'):
+            if float(value) > 70.0:
+                await Device().alarm_service(uid)
+                await Device().fan_services(uid)
+        elif (sensor_type == 'dis'):
+            if float(value) < 5.0:
+                await Device().alarm_service(uid)
+        elif (sensor_type == 'lux'):
+            if float(value) < 10.0:
+                await Device().alarm_service(uid)
+                await Device().light_service(uid)
 
     async def _start_webcam(self,uid):
         # call to database for user preferences
@@ -170,14 +194,8 @@ class IOTSystem:
                         
                         try:
                             # TODO alarm to be update to yolobit
-                            self.writer.write(f"!alarm:{value}#".encode())
+                            Device().alarm_service(uid)
                             
-                            await self.write_action_history(
-                                uid=uid,
-                                service_type='alarm',
-                                value=value
-                            )
-
                         except Exception as e:
                             CustomLogger()._get_logger().exception(f"Failed to update alarm status: {e}")
                             raise e
@@ -225,7 +243,6 @@ class IOTSystem:
                 # await self._connect_serial(port)
 
                 # asyncio.create_task(self._read_serial(uid))
-                # asyncio.create_task(self._send_serial(uid))
                 CustomLogger()._get_logger().info("Sensor System started.")
             
             if self.states['camera']:
@@ -329,7 +346,7 @@ class IOTSystem:
             session.abort_transaction()
             CustomLogger()._get_logger().error(f"Failed to update service status: {e}")
             raise Exception(f"Failed to update service status document")
-        
+
 if __name__ == "__main__":
     import time
     CustomLogger()._get_logger().info("IOT System: __main__")
