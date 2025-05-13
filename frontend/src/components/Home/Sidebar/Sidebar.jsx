@@ -2,38 +2,71 @@ import styles from './Sidebar.module.css';
 import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import Robot from '../../../assets/robot.svg';
-import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useUserContext } from '../../../hooks/UserContext.jsx';
+import apiClient from '../../../services/APIClient.jsx';
 
 const SideBar = () => {
   const navigate = useNavigate();
+  const { systemState, setSystemState, clearUserContext } = useUserContext();
 
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.patch(`${import.meta.env.VITE_SERVER_URL}/auth/logout`, {}, {
-        withCredentials: true,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const logoutResponse = await apiClient(
+        'POST',
+        `${import.meta.env.VITE_SERVER_URL}/auth/logout`
+      );
 
-      if (response.status === 200) {
-        console.log('Logout successful: ', response.data);
-        navigate('/');
-      } else {
-        alert("Something's wrong!");
-      }
+      console.log(`Logout response:`, logoutResponse);
+
+      clearUserContext();
+      toast.success(`Logout successful!`);
+      navigate('/');
     } catch (error) {
-      console.log(error);
-      alert('Failed to logout. Please try again.');
+      toast.error(error.message);
+    }
+  };
+
+  const handleSystemToggle = async (value) => {
+    const command = value ? 'on' : 'off';
+
+    try {
+      const responseData = await apiClient(
+        'POST',
+        `${import.meta.env.VITE_SERVER_URL}/iot/${command}`
+      );
+
+      setSystemState(value);
+
+      console.log(`System turned ${command}:`, responseData);
+      toast.success(`System turned ${command} successfully!`);
+    } catch (error) {
+      toast.error(`Error turning ${command} the system: ${error}`);
     }
   };
 
   return (
     <nav className={styles.wrapper}>
       <div className={styles.logo}>
-        <img className={styles.logoImg} src={Robot} alt=""></img>
+        <img className={styles.logoImg} src={Robot} alt="" />
         <div className={styles.SDA}>SDA</div>
       </div>
       <ul className={styles.list}>
+        <li>
+          <div className={clsx(styles.sidebarLink, styles.systemToggle)}>
+            <div className={styles.icon}>
+              <i className="fa-solid fa-power-off"></i>
+            </div>
+            <span>System</span>
+            <input
+              type="checkbox"
+              className="form-check-input ms-auto"
+              checked={systemState}
+              onChange={() => handleSystemToggle(!systemState)}
+            />
+          </div>
+        </li>
         <li>
           <NavLink to="/home" className={({ isActive }) => clsx(styles.sidebarLink, isActive ? styles.active : '')}>
             <div className={styles.icon}>
@@ -55,13 +88,13 @@ const SideBar = () => {
             <div className={styles.icon}>
               <i className="fa-solid fa-gears"></i>
             </div>
-            Devices
+            Services
           </NavLink>
         </li>
         <li>
           <NavLink to="/profile" className={({ isActive }) => clsx(styles.sidebarLink, isActive ? styles.active : '')}>
             <div className={styles.icon}>
-              <i class="fa-solid fa-user"></i>
+              <i className="fa-solid fa-user"></i>
             </div>
             Profile
           </NavLink>
